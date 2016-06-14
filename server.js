@@ -45,16 +45,14 @@
         if (term == '')
             return;
 
-        Movie.find(
-            { name: new RegExp(term, "i")},
-            function(err, movies) {
-            
-            if (err)
-                res.send(err)
-            
-            console.log(movies);
-            res.json(movies);
+        Movie.find({ 
+			name: new RegExp(term, "i")
+		}, function(err, movies) {
+			if (err)
+                res.send(err);
 
+            // search and return movies searched
+            res.json(movies);
         });
     });
 
@@ -71,7 +69,7 @@
             // get and return all the todos after you create another
             Movie.find(function(err, todos) {
                 if (err)
-                    res.send(err)
+                    res.send(err);
                 res.json(todos);
             });
         });

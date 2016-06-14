@@ -24,8 +24,7 @@ function mainController($scope, $http) {
         $http.post('/api/search', $scope.formData)
             .success(function(data) {
                 $scope.formData = {}; // clear the form so our user is ready to enter another
-                $scope.todos = data;
-                console.log(data);
+                $scope.searchresult = data;
             })
             .error(function(data) {
                 console.log('Error: ' + data);

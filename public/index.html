@@ -14,8 +14,8 @@
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"><!-- load bootstrap -->
     <style>
         html                    { overflow-y:scroll; }
-        body                    { padding-top:50px; }
-        #todo-list              { margin-bottom:30px; }
+        body                    { padding-top:10px; }
+        #todo-list              { margin-bottom:10px; }
     </style>
 
     <!-- SPELLS -->
@@ -29,8 +29,9 @@
     <div class="container">
 
         <!-- HEADER AND TODO COUNT -->
-        <div class="jumbotron text-center">
-            <h1>I'm a Todo-aholic <span class="label label-info">{{ todos.length }}</span></h1>
+        <div class="text-center">
+            <h4>WL Admin</h4>
+			<span class="label label-info">Total movies in db: {{ todos.length }}</span>
         </div>
 
         <!-- TODO LIST -->
@@ -67,12 +68,20 @@
         <div class="col-sm-8 col-sm-offset-2 text-center" style="margin-top: 24px;">
             <form>
                 <div class="form-group">
-                    <input type="text" class="form-control input-lg text-center" placeholder="search"   
-                           ng-model="formData.searchterm">
+                    <input type="text" class="form-control input-lg text-center" placeholder="search" ng-model="formData.searchterm">
                 </div>
                 <button type="submit" class="btn btn-primary btn-lg" ng-click="searchMovie()">Search</button>
             </form>
         </div>
     </div>
+
+	<!-- SEARCH RESULTS -->
+	<div id="todo-list" class="row">
+		<div class="col-sm-4 col-sm-offset-4">
+			<div class="checkbox" ng-repeat="s in searchresult">
+				{{ s.name }}
+			</div>
+		</div>
+	</div>
 </body>
 </html>
