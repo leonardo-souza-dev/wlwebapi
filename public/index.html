@@ -73,15 +73,24 @@
                 <button type="submit" class="btn btn-primary btn-lg" ng-click="searchMovie()">Search</button>
             </form>
         </div>
-    </div>
 
-	<!-- SEARCH RESULTS -->
-	<div id="todo-list" class="row">
-		<div class="col-sm-4 col-sm-offset-4">
-			<div class="checkbox" ng-repeat="s in searchresult">
-				{{ s.name }}
+		<!-- SEARCH RESULTS -->
+		<div id="todo-list" class="row">
+			<div class="col-sm-4 col-sm-offset-4">
+				<div class="checkbox" ng-repeat="s in searchresult">
+					{{ s.name }}
+				</div>
 			</div>
 		</div>
-	</div>
+		
+		<!-- SETUP USER -->
+		<div class="col-sm-8 col-sm-offset-2 text-center" style="margin-top: 24px;">
+            <form>
+                <button type="submit" class="btn btn-primary btn-lg" ng-click="setupApp()">Setup</button>
+            </form>
+			{{ setupresult.setupresult }}
+        </div>
+    </div>
+
 </body>
 </html>

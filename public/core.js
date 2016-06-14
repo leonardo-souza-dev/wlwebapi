@@ -20,6 +20,17 @@ function mainController($scope, $http) {
             console.log('Error: ' + data);
         });
 
+    $scope.setupApp = function() {
+        $http.get('/api/setup')
+            .success(function(setupresult) {
+                $scope.formData = {}; // clear the form so our user is ready to enter another
+                 $scope.setupresult = setupresult;
+            })
+            .error(function(data) {
+                console.log('Error: ' + data);
+            });
+    };
+
     $scope.searchMovie = function() {
         $http.post('/api/search', $scope.formData)
             .success(function(data) {
