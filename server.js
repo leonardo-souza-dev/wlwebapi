@@ -23,7 +23,7 @@
         name: String, plot: String
     });
 	var User = mongoose.model('User', {
-        user_id: String, name: String, password: String
+        name: String, password: String, hash: String
     });
     
 	// routes ======================================================================
@@ -32,14 +32,55 @@
 	app.get('/api/setup', function(req, res) {
 		User.create({
 			name: 'Nick Cerminara', 
-			password: '123', 
-			admin: true
+			hash: 'teste-0s9dia0s9dia0s9di0a9sid-teste',
+			password: '123'
 		}, function(err, data){
 			if (err) res.send(err);
 			res.json({ setupresult: true });
 		});
 	});
-	
+
+	function generateUUID() {
+	    var d = new Date().getTime();
+	    //var d = window.performance.now;
+	    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+	        var r = (d + Math.random()*16)%16 | 0;
+	        d = Math.floor(d/16);
+	        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+	    });
+	    return uuid;
+	};
+
+	app.post('/api/createuser', function(req, res) {
+		/* var name, password;
+
+		if(req.body.hash == null)
+			res.json({success: false, message: 'No hash found.'});
+
+		if (req.body.name == null)
+			name = '';
+		else
+			name = req.body.name;
+
+		if (req.body.password == null)
+			password = '';
+		else
+			password = req.body.password; */
+
+		var lGuid = generateUUID();
+
+		User.create({
+			name: '', 
+			hash: lGuid,
+			password: ''
+		}, function(err, data) {
+			if (err) res.send(err);
+			//var msg = 'User with hash ' + lGuid + ' created!';
+			res.json({ hash: lGuid });
+		});
+
+	});
+
 	app.post('/api/authenticate', function(req, res) {
 
 		// find the user
@@ -50,7 +91,9 @@
 			if (err) throw err;
 
 			if (!user) {
-				res.json({ success: false, message: 'Authentication failed. User not found.' });
+
+				res.json({ success: false, message: 'Authentication failed. User dont exist.' });
+
 			} else if (user) {
 				
 				// check if password matches
