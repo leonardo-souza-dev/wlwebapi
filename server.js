@@ -52,20 +52,6 @@
 	};
 
 	app.post('/api/createuser', function(req, res) {
-		/* var name, password;
-
-		if(req.body.hash == null)
-			res.json({success: false, message: 'No hash found.'});
-
-		if (req.body.name == null)
-			name = '';
-		else
-			name = req.body.name;
-
-		if (req.body.password == null)
-			password = '';
-		else
-			password = req.body.password; */
 
 		var lGuid = generateUUID();
 
@@ -75,7 +61,6 @@
 			password: ''
 		}, function(err, data) {
 			if (err) res.send(err);
-			//var msg = 'User with hash ' + lGuid + ' created!';
 			res.json({ hash: lGuid });
 		});
 
