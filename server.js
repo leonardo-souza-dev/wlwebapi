@@ -15,7 +15,6 @@
     app.use(bodyParser.json());                                     // parse application/json
     app.use(bodyParser.json({ type: 'application/vnd.api+json' })); // parse application/vnd.api+json as json
     app.use(methodOverride());
-	console.log('1');
 	app.set('superSecret', 'ilovescotchyscotch'); // secret variable
 	
 	// define model =================
@@ -23,7 +22,7 @@
         name: String, plot: String
     });
 	var User = mongoose.model('User', {
-        name: String, password: String, hash: String
+        name: String, password: String, hash: String, mymovies: [Movie]
     });
     
 	// routes ======================================================================
@@ -42,7 +41,6 @@
 
 	function generateUUID() {
 	    var d = new Date().getTime();
-	    //var d = window.performance.now;
 	    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
 	        var r = (d + Math.random()*16)%16 | 0;
 	        d = Math.floor(d/16);
@@ -61,7 +59,7 @@
 			password: ''
 		}, function(err, data) {
 			if (err) res.send(err);
-			res.json({ hash: lGuid });
+			res.json({ success: true, message: "Hash created!", object: { hash: lGuid } });
 		});
 
 	});
@@ -70,7 +68,7 @@
 
 		// find the user
 		User.findOne({
-			name: req.body.name
+			hash: req.body.hash
 		}, function(err, user) {
 			
 			if (err) throw err;
@@ -87,7 +85,6 @@
 					res.json({ success: false, message: 'Authentication failed. Wrong password.' });
 					
 				} else {
-					console.log('auth ok');
 					// if user is found and password is right
 					// create a token
 					var token = jwt.sign(user, app.get('superSecret'), {
@@ -98,21 +95,38 @@
 					res.json({
 						success: true,
 						message: 'Enjoy your token!',
-						token: token
+						object: { token: token }
 					});
 				}
 			}
 		});
 	});
 	
+    //searchinner
+    app.post('/api/searchinner', function(req, res) {
+        var term = req.body.searchterm;
+        var hash = req.body.hash;
+
+        if (hash == '' || term == '')
+            return;
+
+        Movie.collection.
+
+        Movie.find({ 
+			name: new RegExp(term, "i")
+		}, function(err, movies) {
+			if (err)
+                res.send(err);
+
+            // search and return movies searched
+            res.json(movies);
+        });
+    });
+	
     //search
     app.post('/api/search', function(req, res) {
         var term = req.body.searchterm;
         var user = req.body.userid;
-        console.log('server.js');
-        console.log('term: ' + term);
-        console.log('req.body');
-        console.log(req.body);
 
         if (term == '')
             return;
@@ -124,7 +138,11 @@
                 res.send(err);
 
             // search and return movies searched
-            res.json(movies);
+            res.json({
+            	success: true,
+            	message: 'Search complete.',
+            	object: { movies: movies }
+            });
         });
     });
 
