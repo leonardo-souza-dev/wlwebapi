@@ -22,8 +22,7 @@
         name: String, plot: String
     });
 	var User = mongoose.model('User', {
-        name: String, password: String, hash: String, mymovies: [Movie]
-    });
+        name: String, password: String, hash: String, mymovies: [String]    });
     
 	// routes ======================================================================
     // api ---------------------------------------------------------------------
@@ -53,15 +52,20 @@
 
 		var lGuid = generateUUID();
 
-		User.create({
-			name: '', 
-			hash: lGuid,
-			password: ''
-		}, function(err, data) {
-			if (err) res.send(err);
-			res.json({ success: true, message: "Hash created!", object: { hash: lGuid } });
-		});
+		Movie.find(function(err, todos) {
+			console.log(todos[0]);
 
+			User.create({
+				name: '', 
+				hash: lGuid,
+				password: '',
+				mymovies: [todos[0]._id, todos[1]._id]
+			}, function(err, data) {
+				if (err) res.send(err);
+				res.json({ success: true, message: "Hash created!", object: { hash: lGuid } });
+			});
+
+		});
 	});
 
 	app.post('/api/authenticate', function(req, res) {
@@ -101,7 +105,32 @@
 			}
 		});
 	});
-	
+
+	/*orders have items
+	{ "_id" : 1, "item" : "abc", "price" : 12, "quantity" : 2 }
+	{ "_id" : 2, "item" : "jkl", "price" : 20, "quantity" : 1 }
+	{ "_id" : 3  }
+	inventory have items
+	{ "_id" : 1, "sku" : "abc", description: "product 1", "instock" : 120 }
+	{ "_id" : 2, "sku" : "def", description: "product 2", "instock" : 80 }
+	{ "_id" : 3, "sku" : "ijk", description: "product 3", "instock" : 60 }
+	{ "_id" : 4, "sku" : "jkl", description: "product 4", "instock" : 70 }
+	{ "_id" : 5, "sku": null, description: "Incomplete" }
+	{ "_id" : 6 }
+
+	movie
+	{ "_id" : 1, "name" : "domesticas"}
+	{ "_id" : 2, "name" : "batman"}
+	{ "_id" : 3, "name" : "cidade de deus"}
+	user
+	{ 
+		"_id" : 1, "mylist" : [
+								{ "_id" : 1, "name" : "domesticas"}, 
+								{ "_id" : 2, "name" : "batman"}
+							  ]
+	}
+	*/
+
     //searchinner
     app.post('/api/searchinner', function(req, res) {
         var term = req.body.searchterm;
@@ -110,17 +139,38 @@
         if (hash == '' || term == '')
             return;
 
-        Movie.collection.
+        Movie.collection.aggregate([{
+			$lookup: {
+				from: "User",
+				localField: "_id",
+				foreignField: "mylist._id",
+				as: "mylist_movies"
+			}
+		}], function(err, movies) {
+			if (err)
+                res.send(err);
 
-        Movie.find({ 
+            // search and return movies searched
+            res.json({
+            	success: true,
+            	message: 'Search complete.',
+            	object: { movies: movies }
+            });
+        });
+
+        /*Movie.find({ 
 			name: new RegExp(term, "i")
 		}, function(err, movies) {
 			if (err)
                 res.send(err);
 
             // search and return movies searched
-            res.json(movies);
-        });
+            res.json({
+            	success: true,
+            	message: 'Search complete.',
+            	object: { movies: movies }
+            });
+        });*/
     });
 	
     //search
@@ -192,6 +242,27 @@
 
             res.json(todos); // return all todos in JSON format
         });
+    });
+
+
+	
+    //update user
+    app.post('/api/updateuser', function(req, res) {
+        User.findById(req.params.id, function(err, u) {
+			if (!u)
+				return next(new Error('Could not load Document'));
+			else {
+				// do your updates here
+				u.modified = new Date();
+
+				u.save(function(err) {
+					if (err)
+						console.log('error')
+					else
+						console.log('success')
+					});
+				}
+		});
     });
 
     // application -------------------------------------------------------------

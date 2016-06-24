@@ -10,6 +10,17 @@ function c(title, text) {
 function mainController($scope, $http) {
     $scope.formData = {};
 
+    $scope.searchinner = function(){
+        $http.post('/api/searchinner', $scope.formData)
+            .success(function(data) {
+                $scope.formData = {}; // clear the form so our user is ready to enter another
+                $scope.searchresultinner = data;
+            })
+            .error(function(data) {
+                console.log('Error: ' + data);
+            });
+    };
+
     // when landing on the page, get all todos and show them
     $http.get('/api/todos')
         .success(function(data) {
@@ -58,6 +69,18 @@ function mainController($scope, $http) {
     // delete a todo after checking it
     $scope.deleteMovie = function(id) {
         $http.delete('/api/todos/' + id)
+            .success(function(data) {
+                $scope.todos = data;
+                console.log(data);
+            })
+            .error(function(data) {
+                console.log('Error: ' + data);
+            });
+    };
+
+    // delete a todo after checking it
+    $scope.updateuser = function(id) {
+        $http.post('/api/updateuser/' + $scope.formData)
             .success(function(data) {
                 $scope.todos = data;
                 console.log(data);

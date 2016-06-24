@@ -90,6 +90,29 @@
             </form>
 			{{ setupresult.setupresult }}
         </div>
+
+        
+
+
+        <!-- search inner -->
+        <div class="col-sm-8 col-sm-offset-2 text-center" style="margin-top: 24px;">
+            <h4>search inner</h4>
+            <form>
+                <div class="form-group">
+                    <input type="text" class="form-control input-lg text-center" placeholder="search" ng-model="formData.searchterm">
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg" ng-click="searchinner()">Search</button>
+            </form>
+        </div>
+        <!-- SEARCH RESULTS INNER -->
+        <div id="todo-list" class="row">
+            <div class="col-sm-4 col-sm-offset-4">
+                {{searchresultinner.success}},{{searchresultinner.message}},{{searchresultinner.object}}
+                <div class="checkbox" ng-repeat="s in searchresultinner">
+                    {{ s.name }}
+                </div>
+            </div>
+        </div>
     </div>
 
 </body>
