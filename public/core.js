@@ -24,18 +24,31 @@ function mainController($scope, $http) {
     // when landing on the page, get all todos and show them
     $http.get('/api/todos')
         .success(function(data) {
-            $scope.todos = data;
+            $scope.movies = data;
             console.log(data);
         })
         .error(function(data) {
             console.log('Error: ' + data);
         });
 
-    $scope.setupApp = function() {
-        $http.get('/api/setup')
-            .success(function(setupresult) {
+    $scope.createUserOld = function() {
+        $http.post('/api/todos', $scope.formData)
+            .success(function(data) {
                 $scope.formData = {}; // clear the form so our user is ready to enter another
-                 $scope.setupresult = setupresult;
+                $scope.todos = data;
+                console.log(data);
+            })
+            .error(function(data) {
+                console.log('Error: ' + data);
+            });
+    };
+
+    $scope.createUser = function() {
+        $http.post('/api/createuser')
+            .success(function(msg) {
+                console.log(msg);
+                $scope.formData = {}; // clear the form so our user is ready to enter another
+                $scope.setupresult = msg;
             })
             .error(function(data) {
                 console.log('Error: ' + data);
@@ -45,8 +58,10 @@ function mainController($scope, $http) {
     $scope.searchMovie = function() {
         $http.post('/api/search', $scope.formData)
             .success(function(data) {
+                console.log('data');
+                console.log(data);
                 $scope.formData = {}; // clear the form so our user is ready to enter another
-                $scope.searchresult = data;
+                $scope.searchresult = data.object.movies;
             })
             .error(function(data) {
                 console.log('Error: ' + data);

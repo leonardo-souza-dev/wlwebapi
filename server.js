@@ -22,21 +22,23 @@
         name: String, plot: String
     });
 	var User = mongoose.model('User', {
-        name: String, password: String, hash: String, mymovies: [String]    });
+        name: String, password: String, hash: String, mymovies: [String], token: String });
+
     
 	// routes ======================================================================
     // api ---------------------------------------------------------------------
 	
-	app.get('/api/setup', function(req, res) {
-		User.create({
-			name: 'Nick Cerminara', 
-			hash: 'teste-0s9dia0s9dia0s9di0a9sid-teste',
-			password: '123'
-		}, function(err, data){
-			if (err) res.send(err);
-			res.json({ setupresult: true });
-		});
-	});
+	// app.get('/api/setup', function(req, res) {
+	// 	User.create({
+	// 		name: 'Nick Cerminara', 
+	// 		hash: 'teste-0s9dia0s9dia0s9di0a9sid-teste',
+	// 		password: '123'
+	// 	}, function(err, data){
+	// 		if (err) res.send(err);
+	// 		res.json({ setupresult: true });
+	// 	});
+	// });
+
 
 	function generateUUID() {
 	    var d = new Date().getTime();
@@ -48,24 +50,64 @@
 	    return uuid;
 	};
 
+
+
+	function createToken(pUser) {
+		console.log('entrou no createUser');
+		return jwt.sign(pUser, app.get('superSecret'), { expiresIn: 86400 /* expires in 24 hours*/ });
+	}
+
 	app.post('/api/createuser', function(req, res) {
 
 		var lGuid = generateUUID();
 
-		Movie.find(function(err, todos) {
-			console.log(todos[0]);
+		User.create({ 
+			hash: lGuid,
+			mymovies: [],
+			token: ''
+		}, function(err, data) {
+			if (err) {
+				res.send(err);
+			}
 
-			User.create({
-				name: '', 
-				hash: lGuid,
-				password: '',
-				mymovies: [todos[0]._id, todos[1]._id]
-			}, function(err, data) {
-				if (err) res.send(err);
-				res.json({ success: true, message: "Hash created!", object: { hash: lGuid } });
-			});
+			var token = createToken(data);
+			
+			console.log('lGuid');
+			console.log(lGuid);
+			console.log('');
 
+			var conditions = { hash: lGuid },
+				update = { $set: { token: token } },
+				options = { multi: false };
+
+			User.update(conditions, update, options, callback);
+
+			function callback (err, numAffected) {
+				console.log('numAffected');
+				console.log(numAffected);
+			}
+
+			res.json({ success: true, message: "Hash created!", object: { hash: lGuid } });
 		});
+
+		//var lUser = User;
+
+		// Movie.find(function(err, todos) {
+		// 	console.log('-----filme-------');
+		// 	console.log(todos[0]);
+
+		// 	var lToken = createToken(User);
+
+		// 	User.create({ 
+		// 		hash: lGuid,
+		// 		token: lToken,
+		// 		mymovies: [todos[0]._id, todos[1]._id]
+		// 	}, function(err, data) {
+		// 		if (err) res.send(err);
+		// 		res.json({ success: true, message: "Hash created!", object: { hash: lGuid } });
+		// 	});
+
+		// });
 	});
 
 	app.post('/api/authenticate', function(req, res) {
@@ -78,9 +120,7 @@
 			if (err) throw err;
 
 			if (!user) {
-
 				res.json({ success: false, message: 'Authentication failed. User dont exist.' });
-
 			} else if (user) {
 				
 				// check if password matches
@@ -91,9 +131,7 @@
 				} else {
 					// if user is found and password is right
 					// create a token
-					var token = jwt.sign(user, app.get('superSecret'), {
-						expiresIn: 86400 // expires in 24 hours
-					});
+					var token = createToken(user);
 					
 					// return the information including token as JSON
 					res.json({
@@ -106,94 +144,66 @@
 		});
 	});
 
-	/*orders have items
-	{ "_id" : 1, "item" : "abc", "price" : 12, "quantity" : 2 }
-	{ "_id" : 2, "item" : "jkl", "price" : 20, "quantity" : 1 }
-	{ "_id" : 3  }
-	inventory have items
-	{ "_id" : 1, "sku" : "abc", description: "product 1", "instock" : 120 }
-	{ "_id" : 2, "sku" : "def", description: "product 2", "instock" : 80 }
-	{ "_id" : 3, "sku" : "ijk", description: "product 3", "instock" : 60 }
-	{ "_id" : 4, "sku" : "jkl", description: "product 4", "instock" : 70 }
-	{ "_id" : 5, "sku": null, description: "Incomplete" }
-	{ "_id" : 6 }
-
-	movie
-	{ "_id" : 1, "name" : "domesticas"}
-	{ "_id" : 2, "name" : "batman"}
-	{ "_id" : 3, "name" : "cidade de deus"}
-	user
-	{ 
-		"_id" : 1, "mylist" : [
-								{ "_id" : 1, "name" : "domesticas"}, 
-								{ "_id" : 2, "name" : "batman"}
-							  ]
-	}
-	*/
-
-    //searchinner
-    app.post('/api/searchinner', function(req, res) {
-        var term = req.body.searchterm;
-        var hash = req.body.hash;
-
-        if (hash == '' || term == '')
-            return;
-
-        Movie.collection.aggregate([{
-			$lookup: {
-				from: "User",
-				localField: "_id",
-				foreignField: "mylist._id",
-				as: "mylist_movies"
-			}
-		}], function(err, movies) {
-			if (err)
-                res.send(err);
-
-            // search and return movies searched
-            res.json({
-            	success: true,
-            	message: 'Search complete.',
-            	object: { movies: movies }
-            });
-        });
-
-        /*Movie.find({ 
-			name: new RegExp(term, "i")
-		}, function(err, movies) {
-			if (err)
-                res.send(err);
-
-            // search and return movies searched
-            res.json({
-            	success: true,
-            	message: 'Search complete.',
-            	object: { movies: movies }
-            });
-        });*/
-    });
-	
     //search
     app.post('/api/search', function(req, res) {
+
         var term = req.body.searchterm;
-        var user = req.body.userid;
 
-        if (term == '')
-            return;
+        if (term == undefined || term == '')
+            return res.send({
+						success: false,
+						message: 'no term found',
+						object: { }
+					});
 
-        Movie.find({ 
-			name: new RegExp(term, "i")
-		}, function(err, movies) {
+
+        console.log('req.body.token');
+        console.log(req.body.token);
+        console.log('');
+
+        if (req.body.token == undefined || req.body.token == '')
+            return res.send({
+						success: false,
+						message: 'no user found',
+						object: { }
+					});
+
+
+        User.findOne({
+        	token: req.body.token
+        }, function(err, user) {
+
 			if (err)
                 res.send(err);
 
-            // search and return movies searched
-            res.json({
-            	success: true,
-            	message: 'Search complete.',
-            	object: { movies: movies }
-            });
-        });
+            Movie.find({ 
+				name: new RegExp(term, "i")
+			}, function(err, movies) {
+				if (err)
+	                res.send(err);
+
+	            var movies2 = new Array();
+
+	            for (i = 0; i < movies.length; i++) {
+	            	var lMymovies = user.mymovies;
+				    for (j= 0; j < lMymovies.length; j++) {
+				    	if (movies[i]._id == lMymovies[j]._id) {
+				    		movies[i].isInMyList = true;
+				    	} else {
+				    		movies[i].isInMyList = false;
+				    	}
+			    		movies2.push(movies[i]);
+				    }
+				}
+
+	            // search and return movies searched
+	            res.json({
+	            	success: true,
+	            	message: 'Search complete.',
+	            	object: { movies: movies2 }
+	            });
+	        });
+        });        
     });
 
     // create todo and send back all todos after creation
