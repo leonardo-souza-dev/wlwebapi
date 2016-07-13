@@ -53,7 +53,6 @@
 
 
 	function createToken(pUser) {
-		console.log('entrou no createUser');
 		return jwt.sign(pUser, app.get('superSecret'), { expiresIn: 86400 /* expires in 24 hours*/ });
 	}
 
@@ -63,53 +62,17 @@
 
 		User.create({ 
 			hash: lGuid,
-			mymovies: [],
-			token: ''
+			mymovies: []
 		}, function(err, data) {
 			if (err) {
 				res.send(err);
 			}
 
-			var token = createToken(data);
-			
-			console.log('lGuid');
-			console.log(lGuid);
-			console.log('');
-
-			var conditions = { hash: lGuid },
-				update = { $set: { token: token } },
-				options = { multi: false };
-
-			User.update(conditions, update, options, callback);
-
-			function callback (err, numAffected) {
-				console.log('numAffected');
-				console.log(numAffected);
-			}
-
-			res.json({ success: true, message: "Hash created!", object: { hash: lGuid } });
+	    	res.json({ success: true, message: "User created!", object: data });
 		});
-
-		//var lUser = User;
-
-		// Movie.find(function(err, todos) {
-		// 	console.log('-----filme-------');
-		// 	console.log(todos[0]);
-
-		// 	var lToken = createToken(User);
-
-		// 	User.create({ 
-		// 		hash: lGuid,
-		// 		token: lToken,
-		// 		mymovies: [todos[0]._id, todos[1]._id]
-		// 	}, function(err, data) {
-		// 		if (err) res.send(err);
-		// 		res.json({ success: true, message: "Hash created!", object: { hash: lGuid } });
-		// 	});
-
-		// });
 	});
 
+/*
 	app.post('/api/authenticate', function(req, res) {
 
 		// find the user
@@ -122,15 +85,8 @@
 			if (!user) {
 				res.json({ success: false, message: 'Authentication failed. User dont exist.' });
 			} else if (user) {
-				
-				// check if password matches
-				if (user.password != req.body.password) {
-					
-					res.json({ success: false, message: 'Authentication failed. Wrong password.' });
-					
-				} else {
-					// if user is found and password is right
-					// create a token
+				console.log('user.password !== undefined');
+				if (user.password === undefined || user.password == req.body.password) {
 					var token = createToken(user);
 					
 					// return the information including token as JSON
@@ -139,15 +95,28 @@
 						message: 'Enjoy your token!',
 						object: { token: token }
 					});
-				}
+
+				} else { //if (user.password != req.body.password) {
+					console.log('user.password');
+					console.log(user.password);
+					console.log('req.body.password');
+					console.log(req.body.password);
+					
+					res.json({ success: false, message: 'Authentication failed. Wrong password.', 
+					object: {} });
+				} 
 			}
 		});
 	});
+	*/
 
     //search
     app.post('/api/search', function(req, res) {
 
         var term = req.body.searchterm;
+
+        console.log('---hash---');
+        console.log(req.body.hash);
 
         if (term == undefined || term == '')
             return res.send({
@@ -156,25 +125,15 @@
 						object: { }
 					});
 
-
-        console.log('req.body.token');
-        console.log(req.body.token);
-        console.log('');
-
-        if (req.body.token == undefined || req.body.token == '')
-            return res.send({
-						success: false,
-						message: 'no user found',
-						object: { }
-					});
-
-
         User.findOne({
-        	token: req.body.token
+        	hash: req.body.hash
         }, function(err, user) {
 
 			if (err)
                 res.send(err);
+
+	        console.log('---user find One---');
+	        console.log(user);
 
             Movie.find({ 
 				name: new RegExp(term, "i")
@@ -182,9 +141,18 @@
 				if (err)
 	                res.send(err);
 
+	            console.log('------movies---');
+	            console.log(movies);
+	            console.log(' ');
+
 	            var movies2 = new Array();
 
 	            for (i = 0; i < movies.length; i++) {
+
+	            	console.log('------movies[i]---');
+	            	console.log(movies[i]);
+	            	console.log(' ');
+
 	            	var lMymovies = user.mymovies;
 				    for (j= 0; j < lMymovies.length; j++) {
 				    	if (movies[i]._id == lMymovies[j]._id) {
@@ -192,8 +160,8 @@
 				    	} else {
 				    		movies[i].isInMyList = false;
 				    	}
-			    		movies2.push(movies[i]);
 				    }
+				    movies2.push(movies[i]);
 				}
 
 	            // search and return movies searched

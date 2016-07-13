@@ -60,9 +60,8 @@
             <form>
                 <div class="form-group">
                     <input type="text" class="form-control input-lg text-center" placeholder="search" ng-model="formData.searchterm">
-                    <input type="text" value="someData" ng-model="formData.token" />
                 </div>
-                <button type="submit" class="btn btn-primary btn-lg" ng-click="searchMovie()">Search</button>
+                <button type="submit" class="btn btn-primary btn-lg" ng-click="searchMovie('{{usercreated.object.token}}')">Search</button>
             </form>
             <!-- SEARCH RESULTS -->
             <div id="todo-list" class="row">
@@ -76,11 +75,11 @@
 		
 		<!-- CREATE USER -->
 		<div class="col-sm-12 text-center" style="background-color: green">
-            <h4>Create user</h4>
+            <h4>Create user OK</h4>
             <form>
                 <button type="submit" class="btn btn-primary btn-lg" ng-click="createUser()">Create user</button>
             </form>
-			{{ setupresult.setupresult }}
+			{{ usercreated.object.token }}
         </div>
 
         

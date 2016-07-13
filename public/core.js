@@ -43,19 +43,14 @@ function mainController($scope, $http) {
             });
     };
 
-    $scope.createUser = function() {
-        $http.post('/api/createuser')
-            .success(function(msg) {
-                console.log(msg);
-                $scope.formData = {}; // clear the form so our user is ready to enter another
-                $scope.setupresult = msg;
-            })
-            .error(function(data) {
-                console.log('Error: ' + data);
-            });
-    };
+    $scope.searchMovie = function(token) {
+        console.log('$scope.formData.searchterm');
+        console.log($scope.formData.searchterm);
+        console.log('token');
+        console.log(token);
 
-    $scope.searchMovie = function() {
+        var myReq = { term: $scope.formData.searchterm, token: usercreated.object.token };
+
         $http.post('/api/search', $scope.formData)
             .success(function(data) {
                 console.log('data');
@@ -99,6 +94,18 @@ function mainController($scope, $http) {
             .success(function(data) {
                 $scope.todos = data;
                 console.log(data);
+            })
+            .error(function(data) {
+                console.log('Error: ' + data);
+            });
+    };
+
+    $scope.createUser = function() {
+        $http.post('/api/createuser')
+            .success(function(data) {
+                console.log(data);
+                $scope.formData = {}; // clear the form so our user is ready to enter another
+                $scope.usercreated = data;
             })
             .error(function(data) {
                 console.log('Error: ' + data);
