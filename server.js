@@ -18,29 +18,14 @@
 	app.set('superSecret', 'ilovescotchyscotch'); // secret variable
 	
 	// define model =================
+	var ObjectId = mongoose.Schema.Types.ObjectId;
     var Movie = mongoose.model('Movie', {
-        name: String, plot: String
+        name: String, plot: String, _id: ObjectId
     });
 	var User = mongoose.model('User', {
         name: String, password: String, hash: String, mymovies: [String], token: String });
 
-    
-	// routes ======================================================================
-    // api ---------------------------------------------------------------------
-	
-	// app.get('/api/setup', function(req, res) {
-	// 	User.create({
-	// 		name: 'Nick Cerminara', 
-	// 		hash: 'teste-0s9dia0s9dia0s9di0a9sid-teste',
-	// 		password: '123'
-	// 	}, function(err, data){
-	// 		if (err) res.send(err);
-	// 		res.json({ setupresult: true });
-	// 	});
-	// });
-
-
-	function generateUUID() {
+    function generateUUID() {
 	    var d = new Date().getTime();
 	    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
 	        var r = (d + Math.random()*16)%16 | 0;
@@ -50,11 +35,8 @@
 	    return uuid;
 	};
 
-
-
-	function createToken(pUser) {
-		return jwt.sign(pUser, app.get('superSecret'), { expiresIn: 86400 /* expires in 24 hours*/ });
-	}
+	// routes ======================================================================
+    // api ---------------------------------------------------------------------
 
 	app.post('/api/createuser', function(req, res) {
 
@@ -64,51 +46,41 @@
 			hash: lGuid,
 			mymovies: []
 		}, function(err, data) {
-			if (err) {
-				res.send(err);
-			}
+			if (err) res.send(err);
 
 	    	res.json({ success: true, message: "User created!", object: data });
 		});
 	});
 
-/*
-	app.post('/api/authenticate', function(req, res) {
+	app.post('/api/addmovie', function(req, res) {
+		var hash = req.body.hash;
 
-		// find the user
-		User.findOne({
-			hash: req.body.hash
-		}, function(err, user) {
-			
-			if (err) throw err;
+		var movieId = req.body.movieid;
 
-			if (!user) {
-				res.json({ success: false, message: 'Authentication failed. User dont exist.' });
-			} else if (user) {
-				console.log('user.password !== undefined');
-				if (user.password === undefined || user.password == req.body.password) {
-					var token = createToken(user);
-					
-					// return the information including token as JSON
-					res.json({
-						success: true,
-						message: 'Enjoy your token!',
-						object: { token: token }
-					});
+		User.findOne({ hash: hash}, function(err, user) {
+			if (err) res.send(err);
 
-				} else { //if (user.password != req.body.password) {
-					console.log('user.password');
-					console.log(user.password);
-					console.log('req.body.password');
-					console.log(req.body.password);
-					
-					res.json({ success: false, message: 'Authentication failed. Wrong password.', 
-					object: {} });
-				} 
-			}
+	        Movie.findOne({ _id: movieId }, function(err, movie) {
+				if (err) res.send(err);
+
+				if (!user)	return next(new Error('Could not load Document'));
+				else {
+					//user.modified = new Date();
+					user.mymovies.push(movie);
+					user.save(function(err) {
+						if (err) { 
+							console.log('update error');
+							res.json({ success: false, message: 'Movie not added!', object: { } }); }
+						else {
+							console.log('update success');
+							res.json({ success: true, message: 'Movie added!', object: { } });}
+						});
+					}	            
+	        });
 		});
 	});
-	*/
+
+
 
     //search
     app.post('/api/search', function(req, res) {
@@ -132,43 +104,38 @@
 			if (err)
                 res.send(err);
 
-	        console.log('---user find One---');
+	        console.log('---ACHOU USUARIO COM O HASH PASSADO---');
 	        console.log(user);
 
-            Movie.find({ 
-				name: new RegExp(term, "i")
+            Movie.find({ name: new RegExp(term, "i")
 			}, function(err, movies) {
-				if (err)
-	                res.send(err);
+				console.log('--*** movies ***---');console.log(movies);
+				if (err) res.send(err);
 
-	            console.log('------movies---');
-	            console.log(movies);
-	            console.log(' ');
+	            console.log('------FILMES ENCONTRADOS COM O TERMO PASSADO---');console.log(movies);console.log(' ');
 
 	            var movies2 = new Array();
 
 	            for (i = 0; i < movies.length; i++) {
 
-	            	console.log('------movies[i]---');
-	            	console.log(movies[i]);
-	            	console.log(' ');
-
-	            	var lMymovies = user.mymovies;
-				    for (j= 0; j < lMymovies.length; j++) {
-				    	if (movies[i]._id == lMymovies[j]._id) {
-				    		movies[i].isInMyList = true;
+	            	var filmes_na_lista_do_usuario = user.mymovies;
+				    for (j= 0; j < filmes_na_lista_do_usuario.length; j++) {
+				    	if (movies[i]._id == filmes_na_lista_do_usuario[j]._id) {
+				    		var mTrue = movies[i].toString();
+			    			mTrue = mTrue.replace("}", ", isInMyList: true }");
 				    	} else {
-				    		movies[i].isInMyList = false;
+				    		var mFalse = movies[i].toString();
+			    			mFalse = mFalse.replace("}", ", isInMyList: false }");
 				    	}
 				    }
-				    movies2.push(movies[i]);
-				}
 
-	            // search and return movies searched
-	            res.json({
-	            	success: true,
-	            	message: 'Search complete.',
-	            	object: { movies: movies2 }
+				    var mx = movies[i].toString();
+				    mx = mx.replace(/(\r\n|\n|\r)/gm,""); //remove new lines
+				    mx = mx.replace("}", ", isInMyList: false }");
+
+				    movies2.push(mx);
+				}
+	            res.json({ success: true, message: 'Search complete.', object: { movies: movies2 }
 	            });
 	        });
         });        
