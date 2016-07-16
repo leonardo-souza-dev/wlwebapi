@@ -20,10 +20,10 @@
 	// define model =================
 	var ObjectId = mongoose.Schema.Types.ObjectId;
     var Movie = mongoose.model('Movie', {
-        name: String, plot: String, _id: ObjectId
+        name: String, _id: ObjectId, isInMyList: false
     });
 	var User = mongoose.model('User', {
-        name: String, password: String, hash: String, mymovies: [String], token: String });
+        name: String, password: String, hash: String, mymovies: [], token: String });
 
     function generateUUID() {
 	    var d = new Date().getTime();
@@ -37,7 +37,6 @@
 
 	// routes ======================================================================
     // api ---------------------------------------------------------------------
-
 	app.post('/api/createuser', function(req, res) {
 
 		var lGuid = generateUUID();
@@ -63,10 +62,12 @@
 	        Movie.findOne({ _id: movieId }, function(err, movie) {
 				if (err) res.send(err);
 
-				if (!user)	return next(new Error('Could not load Document'));
+				if (!user) return next(new Error('Could not load Document'));
 				else {
-					//user.modified = new Date();
-					user.mymovies.push(movie);
+					movie.isInMyList = true;
+
+					user.mymovies.addToSet(movie);
+
 					user.save(function(err) {
 						if (err) { 
 							console.log('update error');
@@ -80,60 +81,38 @@
 		});
 	});
 
-
-
     //search
     app.post('/api/search', function(req, res) {
 
         var term = req.body.searchterm;
 
-        console.log('---hash---');
-        console.log(req.body.hash);
-
         if (term == undefined || term == '')
-            return res.send({
-						success: false,
-						message: 'no term found',
-						object: { }
-					});
+            return res.send({ success: false, message: 'no term found', object: { }	});
 
         User.findOne({
         	hash: req.body.hash
         }, function(err, user) {
-
-			if (err)
-                res.send(err);
-
-	        console.log('---ACHOU USUARIO COM O HASH PASSADO---');
-	        console.log(user);
+			if (err) res.send(err);
 
             Movie.find({ name: new RegExp(term, "i")
 			}, function(err, movies) {
-				console.log('--*** movies ***---');console.log(movies);
 				if (err) res.send(err);
 
-	            console.log('------FILMES ENCONTRADOS COM O TERMO PASSADO---');console.log(movies);console.log(' ');
-
 	            var movies2 = new Array();
-
 	            for (i = 0; i < movies.length; i++) {
 
 	            	var filmes_na_lista_do_usuario = user.mymovies;
 				    for (j= 0; j < filmes_na_lista_do_usuario.length; j++) {
-				    	if (movies[i]._id == filmes_na_lista_do_usuario[j]._id) {
-				    		var mTrue = movies[i].toString();
-			    			mTrue = mTrue.replace("}", ", isInMyList: true }");
+				    	
+				    	if (movies[i]._id.toString() === filmes_na_lista_do_usuario[j]._id.toString()) {
+				    		console.log('a');
+			            	movies[i].isInMyList = true;
 				    	} else {
-				    		var mFalse = movies[i].toString();
-			    			mFalse = mFalse.replace("}", ", isInMyList: false }");
+				    		console.log('b');
+				    		movies[i].isInMyList = false;
 				    	}
 				    }
-
-				    var mx = movies[i].toString();
-				    mx = mx.replace(/(\r\n|\n|\r)/gm,""); //remove new lines
-				    mx = mx.replace("}", ", isInMyList: false }");
-
-				    movies2.push(mx);
+				    movies2.push(movies[i]);
 				}
 	            res.json({ success: true, message: 'Search complete.', object: { movies: movies2 }
 	            });
@@ -188,8 +167,6 @@
             res.json(todos); // return all todos in JSON format
         });
     });
-
-
 	
     //update user
     app.post('/api/updateuser', function(req, res) {
