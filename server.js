@@ -25,6 +25,9 @@
 	var User = mongoose.model('User', {
         name: String, password: String, hash: String, mymovies: [], token: String });
 
+	function c(t){
+		console.log(t);
+	}
     function generateUUID() {
 	    var d = new Date().getTime();
 	    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -51,6 +54,35 @@
 		});
 	});
 
+	app.post('/api/removemovie', function(req, res) {
+		var hash = req.body.hash;
+		var movieId = req.body.movieid;
+
+		User.findOne({ hash: hash }, function(err, user) {
+			if (err) res.send(err);
+	        Movie.findOne({ _id: movieId }, function(err, movie) {
+				if (err) res.send(err);
+
+				var newMovies = new Array();
+				for (var i = 0; i <= user.mymovies; i++) {
+					if (user.mymovies[i]._id != movieId)
+						newMovies.push(user.mymovies[i]);
+				}
+
+				user.mymovies = newMovies;
+
+				user.save(function(err) {
+					if (err) { 
+						console.log('update error');
+						res.json({ success: false, message: 'Movie not added!', object: { } }); }
+					else {
+						console.log('update success');
+						res.json({ success: true, message: 'Movie added!', object: { } });}
+					});
+	        });
+		});
+	});
+
 	app.post('/api/addmovie', function(req, res) {
 		var hash = req.body.hash;
 
@@ -64,8 +96,6 @@
 
 				if (!user) return next(new Error('Could not load Document'));
 				else {
-					movie.isInMyList = true;
-
 					user.mymovies.addToSet(movie);
 
 					user.save(function(err) {
