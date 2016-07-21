@@ -8,9 +8,7 @@
     var bodyParser = require('body-parser');    // pull information from HTML POST (express4)
     var methodOverride = require('method-override'); // simulate DELETE and PUT (express4)
     var url = require('url');
-    //var fs = require('fs'),
     // configuration =================
-    //request = require('request');
     mongoose.connect('mongodb://localhost');
     app.use(express.static(__dirname + '/public'));                 // set the static files location /public/img will be /img for users
     app.use(morgan('dev'));                                         // log every request to the console
@@ -41,20 +39,36 @@
 	    return uuid;
 	};
 
-	// routes ======================================================================
-    // api ---------------------------------------------------------------------
+	// routes ===========================================
+    // api ----------------------------------------------
 	app.post('/api/createuser', function(req, res) {
-
+		var pHash = req.body.hash;
+		console.log(pHash);
 		var lGuid = generateUUID();
 
-		User.create({ 
-			hash: lGuid,
-			mymovies: []
-		}, function(err, data) {
-			if (err) res.send(err);
+		if (pHash == 'undefined' || pHash == undefined) {
 
-	    	res.json({ success: true, message: "User created!", object: data });
-		});
+			User.create({ 
+				hash: lGuid,
+				mymovies: []
+			}, function(err, user) {
+				if (err) res.send(err);
+
+				console.log('User created!');
+		    	res.json({ success: true, message: "User created!", 
+		    		object: { exists: false, user: user, hash: lGuid } });
+			});
+		} else {
+
+			User.findOne({ hash: pHash }, function(err, user) {
+				if (err) res.send(err);
+
+				console.log('User exists!');
+				res.json({ success: true, message: 'User exists!', 
+					object: { exists: true, user: user } });
+			});
+
+		}
 	});
 
 	app.post('/api/removemovie', function(req, res) {
@@ -77,11 +91,13 @@
 				user.save(function(err) {
 					if (err) { 
 						console.log('update error');
-						res.json({ success: false, message: 'Movie not added!', object: { } }); }
+						res.json({ success: false, message: 'Movie not added!', object: { } }); 
+					}
 					else {
 						console.log('update success');
-						res.json({ success: true, message: 'Movie added!', object: { } });}
-					});
+						res.json({ success: true, message: 'Movie added!', object: { } });
+					}
+				});
 	        });
 		});
 	});
@@ -104,10 +120,12 @@
 					user.save(function(err) {
 						if (err) { 
 							console.log('update error');
-							res.json({ success: false, message: 'Movie not added!', object: { } }); }
+							res.json({ success: false, message: 'Movie not added!', 
+								object: { } }); }
 						else {
 							console.log('update success');
-							res.json({ success: true, message: 'Movie added!', object: { } });}
+							res.json({ success: true, message: 'Movie added!', 
+								object: { } });}
 						});
 					}	            
 	        });
@@ -132,23 +150,22 @@
 			}, function(err, movies) {
 				if (err) res.send(err);
 
-	            var movies2 = new Array();
+	            var moviesRes = new Array();
 	            for (i = 0; i < movies.length; i++) {
 
-	            	var filmes_na_lista_do_usuario = user.mymovies;
-				    for (j= 0; j < filmes_na_lista_do_usuario.length; j++) {
+	            	var userMovies = user.mymovies;
+				    for (j= 0; j < userMovies.length; j++) {
 				    	
-				    	if (movies[i]._id.toString() === filmes_na_lista_do_usuario[j]._id.toString()) {
-				    		console.log('igual');
+				    	if (movies[i]._id.toString() == userMovies[j]._id) {
 			            	movies[i].isInMyList = true;
 				    	} else {
-				    		console.log('diferente');
 				    		movies[i].isInMyList = false;
 				    	}
 				    }
-				    movies2.push(movies[i]);
+				    moviesRes.push(movies[i]);
 				}
-	            res.json({ success: true, message: 'Search complete.', object: { movies: movies2 }
+	            res.json({ success: true, message: 'Search complete.', 
+	            	object: { movies: moviesRes }
 	            });
 	        });
         });        
@@ -191,14 +208,10 @@
 	
 	// get all todos
     app.get('/api/todos', function(req, res) {
-        // use mongoose to get all todos in the database
         Movie.find(function(err, todos) {
+            if (err) res.send(err)
 
-            // if there is an error retrieving, send the error. nothing after res.send(err) will execute
-            if (err)
-                res.send(err)
-
-            res.json(todos); // return all todos in JSON format
+            res.json(todos);
         });
     });
 	
@@ -221,16 +234,14 @@
 		});
     });
 
+    app.post('/api/validateuser', function(req, res){
+
+    });
 
     app.get('/poster', function(req, res){
-    	console.log('*********************************************');
-    	
     	var url_parts = url.parse(req.url, true);
     	var query = url_parts.query;
     	var img = query.p;
-
-    	console.log('poster');
-    	console.log(img);
 
     	res.sendfile('./public/images/posters/' + img);
     });
