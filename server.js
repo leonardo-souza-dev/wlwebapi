@@ -20,7 +20,7 @@
 	// define model =================
 	var ObjectId = mongoose.Schema.Types.ObjectId;
     var Movie = mongoose.model('Movie', {
-        name: String, _id: ObjectId, isInMyList: false
+        name: String, _id: ObjectId, isInMyList: false, poster: String
     });
 	var User = mongoose.model('User', {
         name: String, password: String, hash: String, mymovies: [], token: String });
@@ -115,6 +115,7 @@
     app.post('/api/search', function(req, res) {
 
         var term = req.body.searchterm;
+        console.log(term);
 
         if (term == undefined || term == '')
             return res.send({ success: false, message: 'no term found', object: { }	});
@@ -135,10 +136,10 @@
 				    for (j= 0; j < filmes_na_lista_do_usuario.length; j++) {
 				    	
 				    	if (movies[i]._id.toString() === filmes_na_lista_do_usuario[j]._id.toString()) {
-				    		console.log('a');
+				    		console.log('igual');
 			            	movies[i].isInMyList = true;
 				    	} else {
-				    		console.log('b');
+				    		console.log('diferente');
 				    		movies[i].isInMyList = false;
 				    	}
 				    }
