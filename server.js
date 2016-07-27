@@ -37,7 +37,26 @@
 	        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
 	    });
 	    return uuid;
-	};
+	}
+	function estaNaListaDoUsuario(filme, lista){
+		var tem = false;
+		for (j= 0; j < lista.length; j++) {
+	    	
+	    	console.log('filme encontrado com o termo buscado');
+	    	console.log(filme.name);
+	    	console.log('filme que o usuario ja tem');
+	    	console.log(lista[j].name);
+	    	console.log('');
+
+	    	if (filme._id.toString() == lista[j]._id) {
+            	tem = true;
+            	console.log('entrou no TRUE');
+	    	} 
+	    }
+	    console.log('valor final da variavel tem');
+	    console.log(tem);
+	    return tem;
+	}
 
 	// routes ===========================================
     // api ----------------------------------------------
@@ -136,7 +155,6 @@
     app.post('/api/search', function(req, res) {
 
         var term = req.body.searchterm;
-        console.log(term);
 
         if (term == undefined || term == '')
             return res.send({ success: false, message: 'no term found', object: { }	});
@@ -150,18 +168,32 @@
 			}, function(err, movies) {
 				if (err) res.send(err);
 
+				var userMovies = user.mymovies;
+	            
 	            var moviesRes = new Array();
+	            console.log('=====================');
 	            for (i = 0; i < movies.length; i++) {
 
-	            	var userMovies = user.mymovies;
-				    for (j= 0; j < userMovies.length; j++) {
+	            	console.log('consultando o filme ' + movies[i].name + " !!!");
+
+	            	var esta = estaNaListaDoUsuario(movies[i], userMovies);
+	            	console.log('esta');
+	            	console.log(esta);
+				    /*for (j= 0; j < userMovies.length; j++) {
 				    	
+				    	console.log('filme encontrado com o termo buscado');
+				    	console.log(movies[i].name);
+				    	console.log('filme que o usuario ja tem');
+				    	console.log(userMovies[j].name);
+				    	console.log(movies[i]._id.toString() == userMovies[j]._id);
+				    	console.log('');
+
 				    	if (movies[i]._id.toString() == userMovies[j]._id) {
 			            	movies[i].isInMyList = true;
-				    	} else {
-				    		movies[i].isInMyList = false;
+			            	break;
 				    	}
-				    }
+				    }*/
+				    movies[i].isInMyList = esta;
 				    moviesRes.push(movies[i]);
 				}
 	            res.json({ success: true, message: 'Search complete.', 
