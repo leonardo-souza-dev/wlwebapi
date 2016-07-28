@@ -134,19 +134,21 @@
 
 				if (!user) return next(new Error('Could not load Document'));
 				else {
+					movie.isInMyList = true;
 					user.mymovies.addToSet(movie);
 
 					user.save(function(err) {
 						if (err) { 
 							console.log('update error');
 							res.json({ success: false, message: 'Movie not added!', 
-								object: { } }); }
-						else {
+								object: { } }); 
+						} else {
 							console.log('update success');
 							res.json({ success: true, message: 'Movie added!', 
-								object: { } });}
-						});
-					}	            
+								object: { } });
+						}
+					});
+				}
 	        });
 		});
 	});
@@ -169,38 +171,51 @@
 				if (err) res.send(err);
 
 				var userMovies = user.mymovies;
-	            
 	            var moviesRes = new Array();
-	            console.log('=====================');
+
 	            for (i = 0; i < movies.length; i++) {
 
-	            	console.log('consultando o filme ' + movies[i].name + " !!!");
-
 	            	var esta = estaNaListaDoUsuario(movies[i], userMovies);
-	            	console.log('esta');
-	            	console.log(esta);
-				    /*for (j= 0; j < userMovies.length; j++) {
-				    	
-				    	console.log('filme encontrado com o termo buscado');
-				    	console.log(movies[i].name);
-				    	console.log('filme que o usuario ja tem');
-				    	console.log(userMovies[j].name);
-				    	console.log(movies[i]._id.toString() == userMovies[j]._id);
-				    	console.log('');
-
-				    	if (movies[i]._id.toString() == userMovies[j]._id) {
-			            	movies[i].isInMyList = true;
-			            	break;
-				    	}
-				    }*/
 				    movies[i].isInMyList = esta;
 				    moviesRes.push(movies[i]);
 				}
-	            res.json({ success: true, message: 'Search complete.', 
-	            	object: { movies: moviesRes }
+
+	            res.json(
+	            	{ success: true, message: 'Search complete.', object: { movies: moviesRes }
 	            });
 	        });
         });        
+    });
+
+    app.post('/api/obtermylistt', function(req, res) {
+
+        if (req.body.hash == undefined || req.body.hash == '')
+            return res.send({ success: false, message: 'no hash found', object: { }	});
+
+        User.findOne({
+        	hash: req.body.hash
+        }, function(err, user) {
+			if (err) res.send(err);
+
+            res.json(
+            	{ success: true, message: 'MyListt searched.', object: { mylistt: user.mymovies }
+            });
+        });        
+    });
+
+    app.post('/api/obterfilmesrecomendados', function(req, res) {
+
+        if (req.body.hash == undefined || req.body.hash == '')
+            return res.send({ success: false, message: 'no hash found', object: { }	});
+
+        Movie.find(function(err, movies) {
+			if (err) res.send(err);
+
+            res.json(
+            	{ success: true, message: 'Filmes recomendados ok.', 
+            		object: { filmesrecomendados: movies }
+            });
+        }).limit(2);        
     });
 
     // create todo and send back all todos after creation
