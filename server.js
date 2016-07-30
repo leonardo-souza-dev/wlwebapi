@@ -215,7 +215,7 @@
             	{ success: true, message: 'Filmes recomendados ok.', 
             		object: { filmesrecomendados: movies }
             });
-        }).limit(2);        
+        }).limit(4);
     });
 
     // create todo and send back all todos after creation
