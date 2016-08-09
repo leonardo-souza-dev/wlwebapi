@@ -82,9 +82,23 @@
 			User.findOne({ hash: pHash }, function(err, user) {
 				if (err) res.send(err);
 
-				console.log('User exists!');
-				res.json({ success: true, message: 'User exists!', 
-					object: { exists: true, user: user } });
+				if (user == null) {
+					User.create({ 
+						hash: lGuid,
+						mymovies: []
+					}, function(err, user2) {
+						if (err) res.send(err);
+
+						console.log('User not found with the hash, but created another!');
+				    	res.json({ success: true, message: "User created!", 
+				    		object: { exists: true, user: user2, hash: lGuid } });
+					});
+				} else {
+
+					console.log('User exists!');
+					res.json({ success: true, message: 'User exists!', 
+						object: { exists: true, user: user, hash: pHash } });
+				}
 			});
 
 		}
@@ -196,6 +210,15 @@
         	hash: req.body.hash
         }, function(err, user) {
 			if (err) res.send(err);
+
+			console.log('*** user');
+			console.log(user);
+			console.log('');
+			console.log('*** req.body.hash');
+			console.log(req.body.hash);
+			console.log('');
+
+
 
             res.json(
             	{ success: true, message: 'MyListt searched.', object: { mylistt: user.mymovies }
