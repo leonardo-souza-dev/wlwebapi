@@ -62,7 +62,6 @@
     // api ----------------------------------------------
 	app.post('/api/createuser', function(req, res) {
 		var pHash = req.body.hash;
-		console.log(pHash);
 		var lGuid = generateUUID();
 
 		if (pHash == 'undefined' || pHash == undefined) {
@@ -198,7 +197,40 @@
 	            	{ success: true, message: 'Search complete.', object: { movies: moviesRes }
 	            });
 	        });
-        });        
+
+        });
+    });
+
+    app.post('/api/obterfilmesrecomendados', function(req, res) {
+
+        if (req.body.hash == undefined || req.body.hash == '')
+            return res.send({ success: false, message: 'no hash found', object: { }	});
+
+        User.findOne({
+        	hash: req.body.hash
+        }, function(err, user) {
+			if (err) res.send(err);
+
+	        Movie.find(function(err, movies) {
+				if (err) res.send(err);
+
+				var userMovies = user.mymovies;
+	            var moviesRes = new Array();
+
+	            for (i = 0; i < movies.length; i++) {
+
+	            	var esta = estaNaListaDoUsuario(movies[i], userMovies);
+				    movies[i].isInMyList = esta;
+				    moviesRes.push(movies[i]);
+				}
+
+	            res.json(
+	            	{ success: true, message: 'Filmes recomendados ok.', 
+	            		object: { filmesrecomendados: movies }
+	            });
+	        }).limit(4);
+
+        });
     });
 
     app.post('/api/obtermylistt', function(req, res) {
@@ -224,21 +256,6 @@
             	{ success: true, message: 'MyListt searched.', object: { mylistt: user.mymovies }
             });
         });        
-    });
-
-    app.post('/api/obterfilmesrecomendados', function(req, res) {
-
-        if (req.body.hash == undefined || req.body.hash == '')
-            return res.send({ success: false, message: 'no hash found', object: { }	});
-
-        Movie.find(function(err, movies) {
-			if (err) res.send(err);
-
-            res.json(
-            	{ success: true, message: 'Filmes recomendados ok.', 
-            		object: { filmesrecomendados: movies }
-            });
-        }).limit(4);
     });
 
     // create todo and send back all todos after creation
