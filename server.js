@@ -38,23 +38,17 @@
 	    });
 	    return uuid;
 	}
+
 	function estaNaListaDoUsuario(filme, lista){
 		var tem = false;
 		for (j= 0; j < lista.length; j++) {
 	    	
-	    	console.log('filme encontrado com o termo buscado');
-	    	console.log(filme.name);
-	    	console.log('filme que o usuario ja tem');
-	    	console.log(lista[j].name);
-	    	console.log('');
-
 	    	if (filme._id.toString() == lista[j]._id) {
             	tem = true;
             	console.log('entrou no TRUE');
 	    	} 
+
 	    }
-	    console.log('valor final da variavel tem');
-	    console.log(tem);
 	    return tem;
 	}
 
@@ -109,13 +103,16 @@
 
 		User.findOne({ hash: hash }, function(err, user) {
 			if (err) res.send(err);
+
 	        Movie.findOne({ _id: movieId }, function(err, movie) {
 				if (err) res.send(err);
 
 				var newMovies = new Array();
-				for (var i = 0; i <= user.mymovies; i++) {
-					if (user.mymovies[i]._id != movieId)
+				for (var i = 0; i < user.mymovies.length; i++) {
+
+					if (user.mymovies[i]._id != movieId) {
 						newMovies.push(user.mymovies[i]);
+					}
 				}
 
 				user.mymovies = newMovies;
@@ -126,8 +123,11 @@
 						res.json({ success: false, message: 'Movie not added!', object: { } }); 
 					}
 					else {
-						console.log('update success');
-						res.json({ success: true, message: 'Movie added!', object: { } });
+						
+						var msg = 'Movie \'' + movie.name + '\' removed. ';
+						console.log('\r\n' + msg + '\r\n');
+
+						res.json({ success: true, message: msg, object: { } });
 					}
 				});
 	        });
@@ -135,8 +135,8 @@
 	});
 
 	app.post('/api/addmovie', function(req, res) {
+		
 		var hash = req.body.hash;
-
 		var movieId = req.body.movieid;
 
 		User.findOne({ hash: hash}, function(err, user) {
@@ -156,9 +156,11 @@
 							res.json({ success: false, message: 'Movie not added!', 
 								object: { } }); 
 						} else {
-							console.log('update success');
-							res.json({ success: true, message: 'Movie added!', 
-								object: { } });
+						
+							var msg = 'Movie \'' + movie.name + '\' added. ';
+							console.log('\r\n' + msg + '\r\n');
+
+							res.json({ success: true, message: msg, object: { } });
 						}
 					});
 				}
@@ -243,17 +245,11 @@
         }, function(err, user) {
 			if (err) res.send(err);
 
-			console.log('*** user');
-			console.log(user);
-			console.log('');
-			console.log('*** req.body.hash');
-			console.log(req.body.hash);
-			console.log('');
-
-
+			var msg = 'MyListt searched. #' + user.mymovies.length + ' movies';
+			console.log('\r\n' + msg + '\r\n');
 
             res.json(
-            	{ success: true, message: 'MyListt searched.', object: { mylistt: user.mymovies }
+            	{ success: true, message: msg, object: { mylistt: user.mymovies }
             });
         });        
     });
