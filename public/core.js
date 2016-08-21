@@ -10,21 +10,10 @@ function c(title, text) {
 function mainController($scope, $http) {
     $scope.formData = {};
 
-    $scope.searchinner = function(){
-        $http.post('/api/searchinner', $scope.formData)
-            .success(function(data) {
-                $scope.formData = {}; // clear the form so our user is ready to enter another
-                $scope.searchresultinner = data;
-            })
-            .error(function(data) {
-                console.log('Error: ' + data);
-            });
-    };
-
     // when landing on the page, get all todos and show them
-    $http.get('/api/todos')
+    $http.get('/api/obterfilmesrecomendados')
         .success(function(data) {
-            $scope.movies = data;
+            $scope.filmesrecomendados = data;
             console.log(data);
         })
         .error(function(data) {
