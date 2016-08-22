@@ -1,6 +1,7 @@
 {
-  "name": "node-todo",
-  "version": "0.0.0",
+  "private": true,
+  "name": "wlwebapi",
+  "version": "0.0.1",
   "description": "WebApi for WatchListt App",
   "main": "server.js",
   "author": "Leonardo Serra",
@@ -9,5 +10,8 @@
     "express": "^4.13.4",
     "mongoose": "^4.5.0",
     "morgan": "^1.7.0"
+  },
+  "engines": {
+    "node": ">=0.10.25"
   }
 }
