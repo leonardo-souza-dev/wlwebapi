@@ -6,6 +6,7 @@
     var morgan = require('morgan');             // log requests to the console (express4)
     var bodyParser = require('body-parser');    // pull information from HTML POST (express4)
     var url = require('url');
+    app.set('port', (process.env.PORT || 5000));
     
     // configuration =================
     mongoose.connect(process.env.MONGOLAB_URI);
@@ -333,5 +334,6 @@
     });
 
     // listen (start app with node server.js) ======================================
-    app.listen(8080);
-    console.log("WL listening on port 8080");
+    app.listen(app.get('port'), function() {
+        console.log('Node app is running on port', app.get('port'));
+    });
