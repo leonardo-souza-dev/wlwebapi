@@ -9,9 +9,16 @@
     //var methodOverride = require('method-override'); // simulate DELETE and PUT (express4)
     var url = require('url');
     // configuration =================
-    var uriMongoDev = 'mongodb://heroku_b12zjmjm:nlesi8gvba6ego15pqv4vvp52t@ds013216.mlab.com:13216/heroku_b12zjmjm';
-    var uriMongoLocal = 'mongodb://localhost';
-    mongoose.connect(uriMongoLocal);
+    //var uriMongoDev = 'mongodb://heroku_b12zjmjm:nlesi8gvba6ego15pqv4vvp52t@ds013216.mlab.com:13216/heroku_b12zjmjm';
+    //var uriMongoLocal = 'mongodb://localhost';
+    console.log('**********************************');
+    console.log('**********************************');
+    console.log(process.env.MONGOLAB_URI);
+    console.log('**********************************');
+    console.log('**********************************');
+    mongoose.connect(process.env.MONGOLAB_URI);
+    //mongoose.connect(uriMongoLocal);
+    //mongoose.connect(uriMongoLocal);
     app.use(express.static(__dirname + '/public'));                 // set the static files location /public/img will be /img for users
     app.use(morgan('dev'));                                         // log every request to the console
     app.use(bodyParser.urlencoded({'extended':'true'}));            // parse application/x-www-form-urlencoded
