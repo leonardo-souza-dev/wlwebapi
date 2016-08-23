@@ -9,7 +9,9 @@
     app.set('port', (process.env.PORT || 5000));
     
     // configuration =================
-    mongoose.connect('mongodb://heroku_pzqcqt88:v37gt230dhevuoarptfji52t4c@ds013916.mlab.com:13916/heroku_pzqcqt88');
+    var mlab = 'mongodb://heroku_pzqcqt88:v37gt230dhevuoarptfji52t4c@ds013916.mlab.com:13916/heroku_pzqcqt88';
+    console.log('mlab');console.log(mlab);console.log('');
+    mongoose.connect(mlab);
     app.use(express.static(__dirname + '/public'));                 // set the static files location /public/img will be /img for users
     app.use(morgan('dev'));                                         // log every request to the console
     app.use(bodyParser.urlencoded({'extended':'true'}));            // parse application/x-www-form-urlencoded
@@ -169,6 +171,8 @@
 
     //search
     app.post('/api/search', function(req, res) {
+    	console.log('req');console.log(req);console.log('');
+    	console.log('req.body);console.log(req.body);console.log('');
 
         var term = req.body.searchterm;
 
