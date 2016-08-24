@@ -1,13 +1,27 @@
 {
-  "name": "node-todo",
-  "version": "0.0.0",
+  "name": "wlwebapi",
+  "version": "0.0.1",
   "description": "WebApi for WatchListt App",
+  "engines": {
+    "node": "4.5.0"
+  },
   "main": "server.js",
-  "author": "Leonardo Serra",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
     "body-parser": "^1.15.1",
     "express": "^4.13.4",
     "mongoose": "^4.5.0",
     "morgan": "^1.7.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ltreze/nodehelloword"
+  },
+  "keywords": [
+    "node",
+    "heroku"
+  ],
+  "license": "MIT"
 }

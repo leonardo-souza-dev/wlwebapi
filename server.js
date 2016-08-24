@@ -3,65 +3,59 @@
     var express  = require('express');
     var app      = express();                               // create our app w/ express
     var mongoose = require('mongoose');                     // mongoose for mongodb
-	//var jwt    = require('jsonwebtoken'); // used to create, sign, and verify tokens
     var morgan = require('morgan');             // log requests to the console (express4)
     var bodyParser = require('body-parser');    // pull information from HTML POST (express4)
-    //var methodOverride = require('method-override'); // simulate DELETE and PUT (express4)
     var url = require('url');
+    app.set('port', (process.env.PORT || 5000));
+    
     // configuration =================
-    //var uriMongoDev = 'mongodb://heroku_b12zjmjm:nlesi8gvba6ego15pqv4vvp52t@ds013216.mlab.com:13216/heroku_b12zjmjm';
-    //var uriMongoLocal = 'mongodb://localhost';
-    console.log('**********************************');
-    console.log('**********************************');
-    console.log(process.env.MONGOLAB_URI);
-    console.log('**********************************');
-    console.log('**********************************');
-    mongoose.connect(process.env.MONGOLAB_URI);
-    //mongoose.connect(uriMongoLocal);
-    //mongoose.connect(uriMongoLocal);
+
+    var mlab = 'mongodb://heroku_pzqcqt88:v37gt230dhevuoarptfji52t4c@ds013916.mlab.com:13916/heroku_pzqcqt88';
+    console.log('mlab');console.log(mlab);console.log('');
+    mongoose.connect(mlab);
+
     app.use(express.static(__dirname + '/public'));                 // set the static files location /public/img will be /img for users
     app.use(morgan('dev'));                                         // log every request to the console
     app.use(bodyParser.urlencoded({'extended':'true'}));            // parse application/x-www-form-urlencoded
     app.use(bodyParser.json());                                     // parse application/json
     app.use(bodyParser.json({ type: 'application/vnd.api+json' })); // parse application/vnd.api+json as json
-    //app.use(methodOverride());
-	app.set('superSecret', 'ilovescotchyscotch'); // secret variable
+    app.set('superSecret', 'ilovescotchyscotch'); // secret variable
 	
-	// define model =================
-	var ObjectId = mongoose.Schema.Types.ObjectId;
+    // define model =================
+    var ObjectId = mongoose.Schema.Types.ObjectId;
     var Movie = mongoose.model('Movie', {
         name: String, _id: ObjectId, isInMyList: false, poster: String
     });
-	var User = mongoose.model('User', {
-        name: String, password: String, hash: String, mymovies: [], token: String });
-
-	function c(t){
-		console.log(t);
-	}
+    var User = mongoose.model('User', {
+    	name: String, password: String, hash: String, mymovies: [], token: String 
+    });
+    
+    function c(t){
+    	console.log(t);
+    }
     function generateUUID() {
-	    var d = new Date().getTime();
-	    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-	        var r = (d + Math.random()*16)%16 | 0;
-	        d = Math.floor(d/16);
-	        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
-	    });
-	    return uuid;
-	}
-
-	function estaNaListaDoUsuario(filme, lista){
-		var tem = false;
-		for (j= 0; j < lista.length; j++) {
+    	var d = new Date().getTime();
+    	var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    		var r = (d + Math.random()*16)%16 | 0;
+    		d = Math.floor(d/16);
+    		return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+    	});
+    	return uuid;
+    }
+    
+    function estaNaListaDoUsuario(filme, lista){
+	var tem = false;
+	for (j= 0; j < lista.length; j++) {
 	    	
-	    	if (filme._id.toString() == lista[j]._id) {
+	    if (filme._id.toString() == lista[j]._id) {
             	tem = true;
             	console.log('entrou no TRUE');
-	    	} 
-
 	    }
-	    return tem;
 	}
+	return tem;
+    }
 
-	// routes ===========================================
+    // routes ===========================================
     // api ----------------------------------------------
 	app.post('/api/createuser', function(req, res) {
 		var pHash = req.body.hash;
@@ -179,6 +173,8 @@
 
     //search
     app.post('/api/search', function(req, res) {
+    	console.log('req');console.log(req);console.log('');
+    	console.log('req.body');console.log(req.body);console.log('');
 
         var term = req.body.searchterm;
 
@@ -344,5 +340,6 @@
     });
 
     // listen (start app with node server.js) ======================================
-    app.listen(8080);
-    console.log("WL listening on port 8080");
+    app.listen(app.get('port'), function() {
+        console.log('Node app is running on port', app.get('port'));
+    });
