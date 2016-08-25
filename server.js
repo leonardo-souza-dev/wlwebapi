@@ -6,25 +6,23 @@
     var morgan = require('morgan');             // log requests to the console (express4)
     var bodyParser = require('body-parser');    // pull information from HTML POST (express4)
     var url = require('url');
+    var mongoUri = (process.env.MONGODB_URI || 'mongodb://localhost');
     app.set('port', (process.env.PORT || 5000));
     
     // configuration =================
-
-    var mlab = 'mongodb://heroku_pzqcqt88:v37gt230dhevuoarptfji52t4c@ds013916.mlab.com:13916/heroku_pzqcqt88';
-    console.log('mlab');console.log(mlab);console.log('');
-    mongoose.connect(mlab);
-
+    mongoose.connect(mongoUri);
     app.use(express.static(__dirname + '/public'));                 // set the static files location /public/img will be /img for users
     app.use(morgan('dev'));                                         // log every request to the console
     app.use(bodyParser.urlencoded({'extended':'true'}));            // parse application/x-www-form-urlencoded
     app.use(bodyParser.json());                                     // parse application/json
     app.use(bodyParser.json({ type: 'application/vnd.api+json' })); // parse application/vnd.api+json as json
-    app.set('superSecret', 'ilovescotchyscotch'); // secret variable
+    //app.set('superSecret', 'ilovescotchyscotch'); // secret variable
 	
     // define model =================
     var ObjectId = mongoose.Schema.Types.ObjectId;
     var Movie = mongoose.model('Movie', {
-        name: String, _id: ObjectId, isInMyList: false, poster: String
+        //name: String, _id: ObjectId, isInMyList: Boolean, poster: String
+        name: String, isInMyList: Boolean, poster: String
     });
     var User = mongoose.model('User', {
     	name: String, password: String, hash: String, mymovies: [], token: String 
@@ -86,18 +84,43 @@
 						if (err) res.send(err);
 
 						console.log('User not found with the hash, but created another!');
-				    	res.json({ success: true, message: "User created!", 
-				    		object: { exists: true, user: user2, hash: lGuid } });
+				    	res.json({ success: true, message: "User created!", object: { exists: true, user: user2, hash: lGuid } });
 					});
 				} else {
-
-					console.log('User exists!');
-					res.json({ success: true, message: 'User exists!', 
-						object: { exists: true, user: user, hash: pHash } });
+					res.json({ success: true, message: 'User exists!', object: { exists: true, user: user, hash: pHash } });
 				}
 			});
 
 		}
+	});
+
+	app.post('/api/createmovie', function(req, res) {
+		var lName = req.body.name;
+		var lPoster = req.body.poster;
+		var lIsInMyListt = false;
+		//console.log(lName);
+		//console.log(lPoster);
+		//console.log(lIsInMyListt);
+		//console.log(O);
+		/*var filme = new Movie({ name: lName, isInMyList: lIsInMyListt, poster: lPoster });
+		filme.save(function(err) {
+			if (err) {
+	    		throw err;
+	    		//res.json({ success: false, message: "Erro na criacao do filme!", object: { erro: err  } });
+			} else {
+	    		res.json({ success: true, message: "Filme criado!", object: { } });
+	    	}
+		});*/
+
+		Movie.create({ name: lName, isInMyList: lIsInMyListt, poster: lPoster }, function(err, movie) {
+			if (err) {
+	    		res.json({ success: false, message: "Erro na criacao do filme!", object: { } });
+			} else {
+
+	    		res.json({ success: true, message: "Filme criado!", object: { filmeCriado: movie  } });
+	    	}
+		});
+
 	});
 
 	app.post('/api/removemovie', function(req, res) {
@@ -221,21 +244,33 @@
 	        Movie.find(function(err, movies) {
 				if (err) res.send(err);
 
-				var userMovies = user.mymovies;
-	            var moviesRes = new Array();
+				if (user == null) {
+		            /*for (i = 0; i < movies.length; i++) {
+						console.log(movies[i].name);
+						console.log(movies[i].poster);
+					}*/
+		            res.json(
+		            	{ success: true, message: 'Filmes recomendados ok. Usuario nao existe.', object: { filmesrecomendados: movies }
+		            });
+				} else {
 
-	            for (i = 0; i < movies.length; i++) {
+					var userMovies = user.mymovies;
+		            var moviesRes = new Array();
 
-	            	var esta = estaNaListaDoUsuario(movies[i], userMovies);
-				    movies[i].isInMyList = esta;
-				    moviesRes.push(movies[i]);
-				}
+		            for (i = 0; i < movies.length; i++) {
 
-	            res.json(
-	            	{ success: true, message: 'Filmes recomendados ok.', 
-	            		object: { filmesrecomendados: movies }
-	            });
-	        }).limit(4);
+		            	var esta = estaNaListaDoUsuario(movies[i], userMovies);
+					    movies[i].isInMyList = esta;
+					    moviesRes.push(movies[i]);
+						/*console.log(movies[i].name);
+						console.log(movies[i].poster);*/
+					}
+
+		            res.json(
+		            	{ success: true, message: 'Filmes recomendados ok.', object: { filmesrecomendados: moviesRes }
+		            });
+	            }
+	        }).limit(6);
 
         });
     });

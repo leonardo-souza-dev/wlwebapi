@@ -1,5 +1,6 @@
 // public/core.js
-var scotchTodo = angular.module('scotchTodo', []);
+var wlwebapifront = angular.module('wlwebapifront', []);
+var hash = 'wlwebapifront';
 
 function c(title, text) {
     console.log(title);
@@ -11,24 +12,26 @@ function mainController($scope, $http) {
     $scope.formData = {};
 
     // when landing on the page, get all todos and show them
-    $http.get('/api/obterfilmesrecomendados')
+    $http.post('/api/obterfilmesrecomendados', { hash: hash})
         .success(function(data) {
-            $scope.filmesrecomendados = data;
-            console.log(data);
+            $scope.filmesrecomendados = data.object.filmesrecomendados;
+            console.log('data.object.filmesrecomendados');
+            console.log(data.object.filmesrecomendados);
         })
         .error(function(data) {
-            console.log('Error: ' + data);
+            console.log('Error: ');
+            console.log(data);
         });
 
-    $scope.createUserOld = function() {
-        $http.post('/api/todos', $scope.formData)
+    $scope.createMovie = function() {
+        $http.post('/api/createmovie', $scope.formData)
             .success(function(data) {
                 $scope.formData = {}; // clear the form so our user is ready to enter another
-                $scope.todos = data;
-                console.log(data);
+                $scope.filmesrecomendados.push(data.object.filmeCriado);
+                console.log(data.object.filmeCriado);
             })
-            .error(function(data) {
-                console.log('Error: ' + data);
+            .error(function(erro) {
+                console.log(erro);
             });
     };
 
@@ -52,8 +55,14 @@ function mainController($scope, $http) {
             });
     };
 
-    // when submitting the add form, send the text to the node API
-    $scope.createMovie = function() {
+
+    
+
+
+
+
+
+    $scope.createUserOld = function() {
         $http.post('/api/todos', $scope.formData)
             .success(function(data) {
                 $scope.formData = {}; // clear the form so our user is ready to enter another

@@ -1,7 +1,7 @@
 <!doctype html>
 
 <!-- ASSIGN OUR ANGULAR MODULE -->
-<html ng-app="scotchTodo">
+<html ng-app="wlwebapifront">
 <head>
     <!-- META -->
     <meta charset="utf-8">
@@ -30,15 +30,15 @@
         <!-- HEADER AND TODO COUNT -->
         <div class="col-sm-12 text-center" style="background-color: blue">
             <h4>WL Admin</h4>
-			<span class="label label-info">Total movies in db: {{ movies.length }}</span>
+			<span class="label">Total movies in db: {{ filmesrecomendados.length }}</span>
         </div>
 
         <!-- TODO LIST -->
         <div id="todo-list" class="col-sm-12 text-center" style="background-color: yellow">
             <h4>Movies list</h4>
-            <div class="checkbox" ng-repeat="movie in movies">
+            <div class="checkbox" ng-repeat="f in filmesrecomendados">
                 <label>
-                    <input type="checkbox" ng-click="deleteMovie(movie._id)"> {{ movie.name }}
+                    <!--<input type="checkbox" ng-click="deleteFilme(f._id)">--> {{ f.name }}
                 </label>
             </div>
         </div>
@@ -48,7 +48,8 @@
             <h4>Create movie</h4>
             <form>
                 <div class="form-group">
-                    <input type="text" class="form-control input-lg text-center" placeholder="I want to buy a puppy that will love me forever" ng-model="formData.name">
+                    <input type="text" class="form-control input-lg text-center" placeholder="titulo" ng-model="formData.name">
+                    <input type="text" class="form-control input-lg text-center" placeholder="arquivo poster" ng-model="formData.poster">
                 </div>
                 <button type="submit" class="btn btn-primary btn-lg" ng-click="createMovie()">Add</button>
             </form>
