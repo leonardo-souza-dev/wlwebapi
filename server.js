@@ -47,7 +47,6 @@
 	    	
 	    if (filme._id.toString() == lista[j]._id) {
             	tem = true;
-            	console.log('entrou no TRUE');
 	    }
 	}
 	return tem;
@@ -196,8 +195,7 @@
 
     //search
     app.post('/api/search', function(req, res) {
-    	console.log('req');console.log(req);console.log('');
-    	console.log('req.body');console.log(req.body);console.log('');
+    	//console.log('req.body');console.log(req.body);console.log('');
 
         var term = req.body.searchterm;
 
