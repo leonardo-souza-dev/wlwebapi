@@ -164,7 +164,7 @@ app.post('/api/addmovie', function(req, res) {
 					} else {
 					
 						var msg = 'Movie \'' + movie.name + '\' added. ';
-						console.log('\r\n' + msg + '\r\n');
+						c('\r\n' + msg + '\r\n');
 
 						res.json({ success: true, message: msg, object: { } });
 					}
@@ -289,49 +289,6 @@ app.get('/poster', function(req, res){
 
 	res.sendfile('./public/images/posters/' + img);
 });
-
-/*
-app.post('/api/todos', function(req, res) {
-    // create a todo, information comes from AJAX request from Angular
-    Movie.create({
-		name: req.body.name, 
-		done: false
-		}, function(err, todo) {
-			if (err) res.send(err);
-
-			// get and return all the todos after you create another
-			Movie.find(function(err, todos) {
-				if (err)
-					res.send(err);
-				res.json(todos);
-			});
-    });
-});
-
-app.delete('/api/todos/:todo_id', function(req, res) {
-    Movie.remove({
-        _id : req.params.todo_id
-    }, function(err, todo) {
-        if (err)
-            res.send(err);
-
-        // get and return all the todos after you create another
-        Movie.find(function(err, todos) {
-            if (err)
-                res.send(err)
-            res.json(todos);
-        });
-    });
-});
-
-app.get('/api/todos', function(req, res) {
-    Movie.find(function(err, todos) {
-        if (err) res.send(err)
-
-        res.json(todos);
-    });
-});
-*/
 
 // application -------------------------------------------------------------
 app.get('*', function(req, res) {
