@@ -194,7 +194,6 @@ app.post('/api/search', function(req, res) {
             var moviesRes = new Array();
 
             for (i = 0; i < movies.length; i++) {
-
             	var esta = estaNaListaDoUsuario(movies[i], userMovies);
 			    movies[i].isInMyList = esta;
 			    moviesRes.push(movies[i]);
@@ -222,10 +221,6 @@ app.post('/api/obterfilmesrecomendados', function(req, res) {
 			if (err) res.send(err);
 
 			if (user == null) {
-	            /*for (i = 0; i < movies.length; i++) {
-					console.log(movies[i].name);
-					console.log(movies[i].poster);
-				}*/
 	            res.json(
 	            	{ success: true, message: 'Filmes recomendados ok. Usuario nao existe.', object: { filmesrecomendados: movies }
 	            });
@@ -239,8 +234,6 @@ app.post('/api/obterfilmesrecomendados', function(req, res) {
 	            	var esta = estaNaListaDoUsuario(movies[i], userMovies);
 				    movies[i].isInMyList = esta;
 				    moviesRes.push(movies[i]);
-					/*console.log(movies[i].name);
-					console.log(movies[i].poster);*/
 				}
 
 	            res.json(
