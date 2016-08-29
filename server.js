@@ -7,6 +7,7 @@ var morgan = require('morgan');
 var bodyParser = require('body-parser');
 var url = require('url');
 var mongoUri = (process.env.MONGODB_URI || 'mongodb://localhost');
+var basikAuth = require('basic-auth');
 app.set('port', (process.env.PORT || 5000));
 
 // configuration =================
@@ -22,8 +23,26 @@ var ObjectId = mongoose.Schema.Types.ObjectId;
 var Movie = mongoose.model('Movie', { name: String, isInMyList: Boolean, poster: String });
 var User = mongoose.model('User', { name: String, password: String, hash: String, mymovies: [], token: String });
 
-function c(t){
+var auth = function (req, res, next) {
+  function unauthorized(res) {
+    res.set('WWW-Authenticate', 'Basic realm=Authorization Required');
+    return res.send(401);
+  };
 
+  var user = basikAuth(req);
+
+  if (!user || !user.name || !user.pass) {
+    return unauthorized(res);
+  };
+
+  if (user.name === 'asd' && user.pass === 'qwe') {
+    return next();
+  } else {
+    return unauthorized(res);
+  };
+};
+
+function c(t){
 	console.log(t);
 }
 
@@ -50,6 +69,7 @@ function estaNaListaDoUsuario(filme, lista){
 // routes ===========================================
 // api ----------------------------------------------
 app.post('/api/createuser', function(req, res) {
+	c(req.body.hash);
 	var pHash = req.body.hash;
 	var lGuid = generateUUID();
 
@@ -72,12 +92,13 @@ app.post('/api/createuser', function(req, res) {
 
 			if (user == null) {
 				User.create({ 
-					hash: lGuid,
+					hash: pHash,
 					mymovies: []
 				}, function(err, user2) {
 					if (err) res.send(err);
 
-					console.log('User not found with the hash, but created another!');
+					c(user2);
+					c('User not found with the hash, but created another with the hash requested!');
 			    	res.json({ success: true, message: "User created!", object: { exists: true, user: user2, hash: lGuid } });
 				});
 			} else {
@@ -174,8 +195,9 @@ app.post('/api/addmovie', function(req, res) {
 	});
 });
 
-app.post('/api/search', function(req, res) {
+app.post('/api/search', auth, function(req, res) {
 
+    c(req.body);
     var term = req.body.searchterm;
 
     if (term == undefined || term == '')
@@ -280,6 +302,10 @@ app.post('/api/updateuser', function(req, res) {
 				});
 			}
 	});
+});
+
+app.post('/api/enviarlog', function(req, res) {
+    console.log(req.body.log);
 });
 
 app.get('/poster', function(req, res){
