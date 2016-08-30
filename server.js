@@ -8,7 +8,7 @@ var bodyParser = require('body-parser');
 var url = require('url');
 var mongoUri = (process.env.MONGODB_URI || 'mongodb://localhost');
 var basikAuth = require('basic-auth');
-app.set('port', (process.env.PORT || 5000));
+app.set('port', (process.env.PORT || 5040));
 
 // configuration =================
 mongoose.connect(mongoUri);
@@ -24,25 +24,26 @@ var Movie = mongoose.model('Movie', { name: String, isInMyList: Boolean, poster:
 var User = mongoose.model('User', { name: String, password: String, hash: String, mymovies: [], token: String });
 
 var auth = function (req, res, next) {
-  function unauthorized(res) {
-    res.set('WWW-Authenticate', 'Basic realm=Authorization Required');
-    return res.send(401);
-  };
+	function unauthorized(res) {
+		res.set('WWW-Authenticate', 'Basic realm=Authorization Required');
+		return res.send(401);
+	};
 
-  var user = basikAuth(req);
+	var user = basikAuth(req);
 
-  if (!user || !user.name || !user.pass) {
-    return unauthorized(res);
-  };
+	if (!user || !user.name || !user.pass) {
+		return unauthorized(res);
+	};
 
-  if (user.name === 'asd' && user.pass === 'qwe') {
-    return next();
-  } else {
-    return unauthorized(res);
-  };
+	if (user.name === 'asd' && user.pass === 'qwe') {
+		return next();
+	} else {
+		return unauthorized(res);
+	};
 };
 
 function c(t){
+
 	console.log(t);
 }
 
@@ -68,7 +69,7 @@ function estaNaListaDoUsuario(filme, lista){
 
 // routes ===========================================
 // api ----------------------------------------------
-app.post('/api/createuser', function(req, res) {
+app.post('/api/createuser', auth, function(req, res) {
 	c(req.body.hash);
 	var pHash = req.body.hash;
 	var lGuid = generateUUID();
@@ -109,7 +110,7 @@ app.post('/api/createuser', function(req, res) {
 	}
 });
 
-app.post('/api/createmovie', function(req, res) {
+app.post('/api/createmovie', auth, function(req, res) {
 	var lName = req.body.name;
 	var lPoster = req.body.poster;
 	var lIsInMyListt = false;
@@ -124,7 +125,7 @@ app.post('/api/createmovie', function(req, res) {
 	});
 });
 
-app.post('/api/removemovie', function(req, res) {
+app.post('/api/removemovie', auth, function(req, res) {
 	var hash = req.body.hash;
 	var movieId = req.body.movieid;
 
@@ -161,7 +162,7 @@ app.post('/api/removemovie', function(req, res) {
 	});
 });
 
-app.post('/api/addmovie', function(req, res) {
+app.post('/api/addmovie', auth, function(req, res) {
 	
 	var hash = req.body.hash;
 	var movieId = req.body.movieid;
@@ -229,7 +230,7 @@ app.post('/api/search', auth, function(req, res) {
     });
 });
 
-app.post('/api/obterfilmesrecomendados', function(req, res) {
+app.post('/api/obterfilmesrecomendados', auth, function(req, res) {
 
     if (req.body.hash == undefined || req.body.hash == '')
         return res.send({ success: false, message: 'no hash found', object: { }	});
@@ -267,7 +268,7 @@ app.post('/api/obterfilmesrecomendados', function(req, res) {
     });
 });
 
-app.post('/api/obtermylistt', function(req, res) {
+app.post('/api/obtermylistt', auth, function(req, res) {
 
     if (req.body.hash == undefined || req.body.hash == '')
         return res.send({ success: false, message: 'no hash found', object: { }	});
@@ -286,7 +287,7 @@ app.post('/api/obtermylistt', function(req, res) {
     });        
 });
 
-app.post('/api/updateuser', function(req, res) {
+app.post('/api/updateuser', auth, function(req, res) {
     User.findById(req.params.id, function(err, u) {
 		if (!u)
 			return next(new Error('Could not load Document'));
@@ -304,11 +305,12 @@ app.post('/api/updateuser', function(req, res) {
 	});
 });
 
-app.post('/api/enviarlog', function(req, res) {
+app.post('/api/enviarlog', auth, function(req, res) {
+
     console.log(req.body.log);
 });
 
-app.get('/poster', function(req, res){
+app.get('/poster', auth, function(req, res){
 	var url_parts = url.parse(req.url, true);
 	var query = url_parts.query;
 	var img = query.p;
@@ -317,7 +319,8 @@ app.get('/poster', function(req, res){
 });
 
 // application -------------------------------------------------------------
-app.get('*', function(req, res) {
+app.get('*', auth, function(req, res) {
+
     res.sendfile('./public/index.html'); // load the single view file (angular will handle the page changes on the front-end)
 });
 
