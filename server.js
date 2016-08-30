@@ -8,7 +8,8 @@ var bodyParser = require('body-parser');
 var url = require('url');
 var mongoUri = (process.env.MONGODB_URI || 'mongodb://localhost');
 var basikAuth = require('basic-auth');
-app.set('port', (process.env.PORT || 5040));
+app.set('port', (process.env.PORT || 5000));
+var senha = process.env.WL_PWD;
 
 // configuration =================
 mongoose.connect(mongoUri);
@@ -35,7 +36,7 @@ var auth = function (req, res, next) {
 		return unauthorized(res);
 	};
 
-	if (user.name === 'asd' && user.pass === 'qwe') {
+	if (user.name === 'asd' && user.pass === senha) {
 		return next();
 	} else {
 		return unauthorized(res);
