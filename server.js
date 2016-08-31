@@ -279,12 +279,18 @@ app.post('/api/obtermylistt', auth, function(req, res) {
     }, function(err, user) {
 		if (err) res.send(err);
 
+		if (user == null) {
+        	return res.json({ success: false, message: "Usuario nao encontrado", object: { mylistt: []} });
+		}
+c(user);
+		if (user == null && user.mymovies == null) {
+        	return res.json({ success: false, message: "Filmes do usuario nao encontrados", object: { mylistt: [] }});
+		}
+
 		var msg = 'MyListt searched. #' + user.mymovies.length + ' movies';
 		console.log('\r\n' + msg + '\r\n');
 
-        res.json(
-        	{ success: true, message: msg, object: { mylistt: user.mymovies }
-        });
+        res.json({ success: true, message: msg, object: { mylistt: user.mymovies }});
     });        
 });
 
