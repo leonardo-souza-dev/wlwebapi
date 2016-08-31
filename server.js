@@ -307,8 +307,14 @@ app.post('/api/updateuser', auth, function(req, res) {
 });
 
 app.post('/api/enviarlog', auth, function(req, res) {
-
-    console.log(req.body.log);
+    console.log('log');
+    if (req != null && req.body != null && req.body.logmsg != null) {
+    	console.log(req.body.logmsg);
+        res.json({ success: true, message: "Logado no server, conteudo ok", object: { }});
+	} else {
+    	console.log('log chamado mas sem conteudo');
+        res.json({ success: false, message: "Logado no server, sem conteudo", object: { }});
+	}
 });
 
 app.get('/poster', auth, function(req, res){
