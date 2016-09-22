@@ -18,6 +18,8 @@ app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({'extended':'true'}));            // parse application/x-www-form-urlencoded
 app.use(bodyParser.json());                                     // parse application/json
 app.use(bodyParser.json({ type: 'application/vnd.api+json' })); // parse application/vnd.api+json as json
+var apiKey = '96ea630cb1b5c33ee03c20aa8a46b447';
+var movieDB = require('moviedb')(apiKey);
 
 // define model =================
 var ObjectId = mongoose.Schema.Types.ObjectId;
@@ -60,7 +62,7 @@ function generateUUID() {
 
 function estaNaListaDoUsuario(filme, lista){
 	var tem = false;
-	for (j= 0; j < lista.length; j++) {
+	for (j = 0; j < lista.length; j++) {
 	    if (filme._id.toString() == lista[j]._id) {
             tem = true;
 	    }
@@ -197,24 +199,93 @@ app.post('/api/addmovie', auth, function(req, res) {
 	});
 });
 
-app.post('/api/search', auth, function(req, res) {
 
+app.post('/api/searchnew', function(req, res){
+	console.log(req.body);
+	if (req == undefined || req == '')  {
+		return res.send({ success: false, message: 'no req found', object: { } });
+	}
+	if (req.body == undefined || req.body == '')  {
+		return res.send({ success: false, message: 'no req body found', object: { } });
+	}
+	if (req.body.termo == undefined || req.body.termo == '')  {
+		return res.send({ success: false, message: 'no req body term found', object: { } });
+	}
+
+	var termo = req.body.termo;
+
+    User.findOne({ hash: req.body.hash}, function(err, user) {
+		if (err) res.send(err);
+
+		movieDB.searchMovie({query: termo }, function(err, r){
+			console.log(r.results);
+			var resultados = r.results;
+			for(var k in resultados) {
+			    console.log('*****resultados[k]');
+			    console.log(resultados[k].title);
+			}
+	 		res.json(r)
+		});
+
+    });
+});
+
+app.post('/api/search', function(req, res) {
+
+    c('req.body');
     c(req.body);
-    var term = req.body.searchterm;
-
-    if (term == undefined || term == '')
-        return res.send({ success: false, message: 'no term found', object: { }	});
+    
+    var term = req.body.termo;
+	if (req == undefined || req == '')  {
+		return res.send({ success: false, message: 'no req found', object: { } });
+	}
+	if (req.body == undefined || req.body == '')  {
+		return res.send({ success: false, message: 'no req body found', object: { } });
+	}
+	if (req.body.termo == undefined || req.body.termo == '')  {
+		return res.send({ success: false, message: 'no req body term found', object: { } });
+	}
 
     User.findOne({
     	hash: req.body.hash
     }, function(err, user) {
 		if (err) res.send(err);
 
-        Movie.find({ name: new RegExp(term, "i")
-		}, function(err, movies) {
+		c('***********user');
+		c(user);
+
+		movieDB.searchMovie({query: term }, function(err, r){
+			console.log(r.results);
+			var resultados = r.results;
+			for(var k in resultados) {
+				var nome = resultados[k].title;
+				var posterPath;
+				if (resultados[k].poster_path != null) {
+					posterPath = resultados[k].poster_path.substring(1);
+				}
+
+				Movie.create({ 
+					name: nome,
+					isInMyList: false,
+					poster: posterPath
+				}, function(err, user) {
+					if (err) res.send(err);
+					console.log('Filme ' + nome + ' inserido!');
+				});
+			}
+		});
+
+        Movie.find({ name: new RegExp(term, "i")}, function(err, movies) {
 			if (err) res.send(err);
 
+			c('movies');
+			c(movies);
+
 			var userMovies = user.mymovies;
+
+			c('user.myovies');
+			c(user.myovies);
+
             var moviesRes = new Array();
 
             for (i = 0; i < movies.length; i++) {
@@ -223,9 +294,7 @@ app.post('/api/search', auth, function(req, res) {
 			    moviesRes.push(movies[i]);
 			}
 
-            res.json(
-            	{ success: true, message: 'Search complete.', object: { movies: moviesRes }
-            });
+            res.json({ success: true, message: 'Search complete.', object: { movies: moviesRes }});
         });
 
     });
@@ -282,7 +351,6 @@ app.post('/api/obtermylistt', auth, function(req, res) {
 		if (user == null) {
         	return res.json({ success: false, message: "Usuario nao encontrado", object: { mylistt: []} });
 		}
-c(user);
 		if (user == null && user.mymovies == null) {
         	return res.json({ success: false, message: "Filmes do usuario nao encontrados", object: { mylistt: [] }});
 		}
