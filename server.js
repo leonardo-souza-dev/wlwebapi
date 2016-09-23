@@ -23,7 +23,7 @@ var movieDB = require('moviedb')(apiKey);
 
 // define model =================
 var ObjectId = mongoose.Schema.Types.ObjectId;
-var Movie = mongoose.model('Movie', { name: String, isInMyList: Boolean, poster: String });
+var Movie = mongoose.model('Movie', { titulo: String, titulo_original: String, isInMyList: Boolean, poster: String, tmdbId: Number });
 var User = mongoose.model('User', { name: String, password: String, hash: String, mymovies: [], token: String });
 
 var auth = function (req, res, next) {
@@ -117,8 +117,9 @@ app.post('/api/createmovie', auth, function(req, res) {
 	var lName = req.body.name;
 	var lPoster = req.body.poster;
 	var lIsInMyListt = false;
+	var idTmdb = req.body.idTmdb;
 
-	Movie.create({ name: lName, isInMyList: lIsInMyListt, poster: lPoster }, function(err, movie) {
+	Movie.create({ titulo: lName, isInMyList: lIsInMyListt, poster: lPoster, tmdbId: idTmdb }, function(err, movie) {
 		if (err) {
     		res.json({ success: false, message: "Erro na criacao do filme!", object: { } });
 		} else {
@@ -155,7 +156,7 @@ app.post('/api/removemovie', auth, function(req, res) {
 				}
 				else {
 					
-					var msg = 'Movie \'' + movie.name + '\' removed. ';
+					var msg = 'Movie \'' + movie.titulo + '\' removed. ';
 					console.log('\r\n' + msg + '\r\n');
 
 					res.json({ success: true, message: msg, object: { } });
@@ -188,7 +189,7 @@ app.post('/api/addmovie', auth, function(req, res) {
 							object: { } }); 
 					} else {
 					
-						var msg = 'Movie \'' + movie.name + '\' added. ';
+						var msg = 'Movie \'' + movie.titulo + '\' added. ';
 						c('\r\n' + msg + '\r\n');
 
 						res.json({ success: true, message: msg, object: { } });
@@ -198,7 +199,6 @@ app.post('/api/addmovie', auth, function(req, res) {
         });
 	});
 });
-
 
 app.post('/api/searchnew', function(req, res){
 	console.log(req.body);
@@ -232,8 +232,11 @@ app.post('/api/searchnew', function(req, res){
 
 app.post('/api/search', function(req, res) {
 
-    c('req.body');
-    c(req.body);
+    c('');
+    c('########## INICIO DA BUSCA ##########');
+    //c('req.body');
+    //c(req.body);
+    //c('');
     
     var term = req.body.termo;
 	if (req == undefined || req == '')  {
@@ -251,51 +254,95 @@ app.post('/api/search', function(req, res) {
     }, function(err, user) {
 		if (err) res.send(err);
 
-		c('***********user');
+		c('*********** COMECO DE usuario encontrado');
 		c(user);
+		c('*********** FIM DE usuario encontrado');
 
 		movieDB.searchMovie({query: term }, function(err, r){
-			console.log(r.results);
+
 			var resultados = r.results;
+
+			c('*********** QTD filmes encontrados no TMDB');
+			c(r.results.length);
+
+			c('*********** Filmes encontrados no TMDB');
 			for(var k in resultados) {
+				c('**** ' + r.results[k].title);
+				c('**** ' + r.results[k].original_title);
+			}
+
+			for(var k in resultados) {
+
 				var nome = resultados[k].title;
 				var posterPath;
 				if (resultados[k].poster_path != null) {
 					posterPath = resultados[k].poster_path.substring(1);
 				}
+				var idTmdb = resultados[k].id;
+				var tituloOriginal = resultados[k].original_title;
 
-				Movie.create({ 
-					name: nome,
-					isInMyList: false,
-					poster: posterPath
-				}, function(err, user) {
+				Movie.find({ tmdbId: idTmdb }, function(err, movies) {
 					if (err) res.send(err);
-					console.log('Filme ' + nome + ' inserido!');
-				});
+
+					if (movies.length == 0) {
+
+						c('*********************************');
+						c('*********************************');
+						c('**                           ****');
+						c('**                           ****');
+						c('**  http://callbackhell.com/ ****');
+						c('**                           ****');
+						c('**                           ****');
+						c('*********************************');
+						c('*********************************');
+
+						c('*********** filme do TMDB #' + idTmdb + ' NAO ENCONTRADO no banco ');
+
+						
+
+						Movie.create({ 
+							titulo: nome,
+							titulo_original: tituloOriginal,
+							isInMyList: false,
+							poster: posterPath,
+							tmdbId: idTmdb
+						}, function(err, user) {
+							if (err) res.send(err);
+							console.log('Filme ' + nome + ' inserido!');
+						});
+					} else {
+						c('*********** filme do TMDB #' + idTmdb + ' ENCONTRAAAADO no banco ');
+						c(movies);
+					}
+
+		            //res.json({ success: true, message: 'Search complete.', object: { movies: moviesRes }});
+		        });
+
 			}
+
+	        Movie.find({ titulo: new RegExp(term, "i")}, function(err, movies) {
+				if (err) res.send(err);
+
+				c('##### INICIO - filmes encontrados depois que ja inseriu (ou nao) os filmes do TMDB');
+				c(movies);
+				c('##### FIM - filmes encontrados depois que ja inseriu (ou nao) os filmes do TMDB');
+
+				var userMovies = user.mymovies;
+
+				c('user.myovies');
+				c(user.myovies);
+
+	            var moviesRes = new Array();
+
+	            for (i = 0; i < movies.length; i++) {
+	            	var esta = estaNaListaDoUsuario(movies[i], userMovies);
+				    movies[i].isInMyList = esta;
+				    moviesRes.push(movies[i]);
+				}
+
+	            res.json({ success: true, message: 'Search complete.', object: { movies: moviesRes }});
+	        });
 		});
-
-        Movie.find({ name: new RegExp(term, "i")}, function(err, movies) {
-			if (err) res.send(err);
-
-			c('movies');
-			c(movies);
-
-			var userMovies = user.mymovies;
-
-			c('user.myovies');
-			c(user.myovies);
-
-            var moviesRes = new Array();
-
-            for (i = 0; i < movies.length; i++) {
-            	var esta = estaNaListaDoUsuario(movies[i], userMovies);
-			    movies[i].isInMyList = esta;
-			    moviesRes.push(movies[i]);
-			}
-
-            res.json({ success: true, message: 'Search complete.', object: { movies: moviesRes }});
-        });
 
     });
 });

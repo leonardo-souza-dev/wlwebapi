@@ -55,13 +55,6 @@ function mainController($scope, $http) {
             });
     };
 
-
-    
-
-
-
-
-
     $scope.createUserOld = function() {
         $http.post('/api/todos', $scope.formData)
             .success(function(data) {
