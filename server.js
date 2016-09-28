@@ -322,98 +322,102 @@ app.post('/api/searchnew', function(req, res){
 	var lTermo = req.body.termo;
 	var lhash = req.body.hash;
 	var resultadosTMDB;
-	var iterador = 1;
+	var filmesDoUsuario;
+	var filmesBuscadosMongo = [];
+	var moviesMongodbSearched;
 
 	async.series([
-		function (callback) {
-			c(iterador);
+		function buscaUsuario (callback) {
+			c('1 busca usuario');
+			//c(new Date().getTime());
+
+
 		    User.findOne({ hash: lhash}, function (err, user) {
 				if (err) return callback(err);
 
                 if (user == null) {
                     return callback(new Error('No user found.'));
                 }
-                iterador++;
+
+                filmesDoUsuario = user.movies;
+
             	callback();
 		    });
 		},
-		function (callback) {
-			c(iterador);
+		function buscaFilmeTmdb (callback) {
+			c('2 buscaFilmeTmdb');
+			//c(new Date().getTime());
+
 			movieTMDB.searchMovieAsync({query: lTermo}, function (err, r){
 				if (err) return callback(err);
-
-                if (r == null) {
-                    return callback(new Error('No search result found.'));
-                }
+                if (r == null) return callback(new Error('No search result found.'));
+                
 				resultadosTMDB = r.results;
-				var itera = 1;
-				c('resultadosTMDB');
-				c(resultadosTMDB);
-                async.forEach(resultadosTMDB, function(resultado, callback) {
-					c(iterador + '' + itera);
-					var nome = resultado.title;
-					var posterPath;
-					if (resultado.poster_path != null) {
-						posterPath = resultado.poster_path.substring(1);
-					}
-					var idTmdb = resultado.id;
-					var tituloOriginal = resultado.original_title;
 
-					c('nome: ' + nome);
-					c('posterPath: ' + posterPath);
-					c('idTmdb: ' + idTmdb);
-					c('tituloOriginal: ' + tituloOriginal);
-					itera++;
-
-					async.series([
-						function (callback) {
-							Movie.find({ tmdbId: idTmdb }, function(err, movies){
-								if (movies.length == 0) {
-									c('***********');
-									var filmeNovo = { 
-										titulo: nome, 
-										titulo_original: tituloOriginal, 
-										isInMyList: false, 
-										poster: posterPath, 
-										tmdbId: idTmdb 
-									}
-									Movie.create(filmeNovo, function (err, filme) {
-										if (err) res.send(err);
-
-										c('filme inserido');
-										console.log(filme);
-									});
-									
-								} else {
-									c('filme ja existe');
-								}
-					        });
-                    		callback();
-						}
-						], callback);
-
-                }, callback);
+				callback();
 			});
-		}/*,
-		function (callback) {
-			c(iterador);
+		},
+		function salvaFilmesDoTMDB (callback){
 
-			Movie.find({ tmdbId: idTmdb }, function(movies){
-				if (movies.length == 0) {
-					c('nao achou no mongo')
-					var filmeNovo = { 
-						titulo: nome, 
-						titulo_original: tituloOriginal, 
-						isInMyList: false, 
-						poster: posterPath, 
-						tmdbId: idTmdb 
+            async.forEach(resultadosTMDB, function(resultado, callback) {
+
+				var lNome = resultado.title;
+				var lPosterPath;
+				if (resultado.poster_path != null) lPosterPath = resultado.poster_path.substring(1);
+				var lTmdbId = resultado.id;
+				var lTituloOriginal = resultado.original_title;
+				
+				filmeXpto = {};
+
+				async.series([
+					function apiSearchProcuraOFilmeNoMongo (callback) {
+						Movie.findOne({ tmdbId: lTmdbId }, function(err, movie){
+							if (err) return callback(err);
+
+							filmeXpto = movie;
+							if (movie == null)
+								c("3 filme " + resultado.original_title + " nao encontrado no mongo");
+							else
+								c("3 filme " + resultado.original_title + " encontrado no mongo");
+
+				        	callback();
+				        });
+					},
+					function apiSearchSeNaoExistirSalvaFilmeNoMongo (callback) {							//c(new Date().getTime());
+						if (filmeXpto == null) {
+							var novoFilme = { titulo: lNome, titulo_original: lTituloOriginal, isInMyList: false, poster: lPosterPath, tmdbId: lTmdbId };
+							Movie.create(novoFilme, function (err, filme) {
+								if (err) res.send(err);
+
+
+								c('4a salvado ' + resultado.original_title + ' no mongo');
+								c('4b inserindo filme ' + resultado.original_title + ' na lista a ser retornada');
+
+								filmesBuscadosMongo.push(filme);
+								callback();
+							});
+						} else {
+							c('4b inserindo filme ' + resultado.original_title + ' na lista a ser retornada');
+							
+							filmesBuscadosMongo.push(filmeXpto);
+							callback();
+						}
 					}
-					//criaFilmeNoMongo(filmeNovo);
-				} else {
-				}
-        	});
-            callback();
-		}*/
+				], callback);
+
+            }, callback);
+		},
+		function montaResultadoBusca (callback){
+			c('5 montaResultadoBusca');
+            var moviesRes = new Array();
+            for (i = 0; i < filmesBuscadosMongo.length; i++) {
+            	var esta = estaNaListaDoUsuario(filmesBuscadosMongo[i], filmesDoUsuario);
+			    filmesBuscadosMongo[i].isInMyList = esta;
+			    moviesRes.push(filmesBuscadosMongo[i]);
+			}
+			
+            res.json({ success: true, message: 'Search complete.', object: { movies: moviesRes }});
+		}
 	], function(err) { 
 		if (err != null) return res.status(500).send(err);
 
