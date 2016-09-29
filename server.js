@@ -11,6 +11,8 @@ var basikAuth  = require('basic-auth');
 var async      = require('async'); 
 
 // configuration =================
+var senha      = process.env.WL_PWD;
+console.log(senha);
 app.set('port', (process.env.PORT || 5000));
 mongoose.connect(mongoUri);
 app.use(express.static(__dirname + '/public'));                 // set the static files location /public/img will be /img for users
@@ -23,7 +25,8 @@ var movieTMDB = Promise.promisifyAll(require('moviedb')(apiKey));
 
 // define model =================
 var ObjectId = mongoose.Schema.Types.ObjectId;
-var Movie = mongoose.model('Movie', { dataLancamento: String, titulo: String, titulo_original: String, isInMyList: Boolean, poster: String, tmdbId: Number });
+var Movie = mongoose.model('Movie', { titulo: String, tituloOriginal: String, isInMyList: Boolean, 
+	poster: String, tmdbId: Number, dataLancamento: String });
 var User = mongoose.model('User', { name: String, password: String, hash: String, movies: [], token: String });
 
 var auth = function (req, res, next) {
@@ -105,7 +108,7 @@ function forNosResultados(resultadosTMDB){
 				
 				var filmeNovo = { 
 					titulo: nome, 
-					titulo_original: tituloOriginal, 
+					tituloOriginal: tituloOriginal, 
 					isInMyList: false, 
 					poster: posterPath, 
 					tmdbId: idTmdb 
@@ -324,7 +327,7 @@ app.post('/api/addmovie', auth, function adicionaJs(req, res) {
 	});
 });
 
-app.post('/api/search', function(req, res){
+app.post('/api/search', auth, function(req, res){
 	console.log(req.body);
 	if (req == undefined || req == '')  {
 		return res.send({ success: false, message: 'no req found', object: { } });
@@ -403,7 +406,7 @@ app.post('/api/search', function(req, res){
 					},
 					function apiSearchSeNaoExistirSalvaFilmeNoMongo (callback) {							//c(new Date().getTime());
 						if (filmeXpto == null) {
-							var novoFilme = { dataLancamento: lDataLancamento, titulo: lNome, titulo_original: lTituloOriginal, isInMyList: false, poster: lPosterPath, tmdbId: lTmdbId };
+							var novoFilme = { dataLancamento: lDataLancamento, titulo: lNome, tituloOriginal: lTituloOriginal, isInMyList: false, poster: lPosterPath, tmdbId: lTmdbId };
 							Movie.create(novoFilme, function (err, filme) {
 								if (err) res.send(err);
 
