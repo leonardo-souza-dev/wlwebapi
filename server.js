@@ -23,7 +23,7 @@ var movieTMDB = Promise.promisifyAll(require('moviedb')(apiKey));
 
 // define model =================
 var ObjectId = mongoose.Schema.Types.ObjectId;
-var Movie = mongoose.model('Movie', { titulo: String, titulo_original: String, isInMyList: Boolean, poster: String, tmdbId: Number });
+var Movie = mongoose.model('Movie', { dataLancamento: String, titulo: String, titulo_original: String, isInMyList: Boolean, poster: String, tmdbId: Number });
 var User = mongoose.model('User', { name: String, password: String, hash: String, movies: [], token: String });
 
 var auth = function (req, res, next) {
@@ -70,6 +70,7 @@ function estaNaListaDoUsuario(filme, lista){
 	return tem;
 }
 
+//obsoleto INICIO
 function criaFilmeNoMongo(filmeNovo){
 	Movie.create(filmeNovo, function apiSearch_Moviecreate(err, filme) {
 		if (err) res.send(err);
@@ -176,6 +177,22 @@ function fazOTrampo(pHash, pTermo, res){
 		});
 	});
 }
+
+app.post('/api/searchold', function apiSearch (req, res) {    
+    var term = req.body.termo;
+	if (req == undefined || req == '')  {
+		return res.send({ success: false, message: 'no req found', object: { } });
+	}
+	if (req.body == undefined || req.body == '')  {
+		return res.send({ success: false, message: 'no req body found', object: { } });
+	}
+	if (req.body.termo == undefined || req.body.termo == '')  {
+		return res.send({ success: false, message: 'no req body term found', object: { } });
+	}
+
+    fazOTrampo(req.body.hash, req.body.termo, res);
+});
+//obsoleto FIM
 
 // routes ===========================================
 // api ----------------------------------------------
@@ -307,7 +324,7 @@ app.post('/api/addmovie', auth, function adicionaJs(req, res) {
 	});
 });
 
-app.post('/api/searchnew', function(req, res){
+app.post('/api/search', function(req, res){
 	console.log(req.body);
 	if (req == undefined || req == '')  {
 		return res.send({ success: false, message: 'no req found', object: { } });
@@ -325,12 +342,11 @@ app.post('/api/searchnew', function(req, res){
 	var filmesDoUsuario;
 	var filmesBuscadosMongo = [];
 	var moviesMongodbSearched;
+    var moviesRes = new Array();
 
 	async.series([
 		function buscaUsuario (callback) {
 			c('1 busca usuario');
-			//c(new Date().getTime());
-
 
 		    User.findOne({ hash: lhash}, function (err, user) {
 				if (err) return callback(err);
@@ -346,7 +362,6 @@ app.post('/api/searchnew', function(req, res){
 		},
 		function buscaFilmeTmdb (callback) {
 			c('2 buscaFilmeTmdb');
-			//c(new Date().getTime());
 
 			movieTMDB.searchMovieAsync({query: lTermo}, function (err, r){
 				if (err) return callback(err);
@@ -366,6 +381,9 @@ app.post('/api/searchnew', function(req, res){
 				if (resultado.poster_path != null) lPosterPath = resultado.poster_path.substring(1);
 				var lTmdbId = resultado.id;
 				var lTituloOriginal = resultado.original_title;
+				var lDataLancamento = resultado.release_date;
+				c('resultado');
+				c(resultado);
 				
 				filmeXpto = {};
 
@@ -385,7 +403,7 @@ app.post('/api/searchnew', function(req, res){
 					},
 					function apiSearchSeNaoExistirSalvaFilmeNoMongo (callback) {							//c(new Date().getTime());
 						if (filmeXpto == null) {
-							var novoFilme = { titulo: lNome, titulo_original: lTituloOriginal, isInMyList: false, poster: lPosterPath, tmdbId: lTmdbId };
+							var novoFilme = { dataLancamento: lDataLancamento, titulo: lNome, titulo_original: lTituloOriginal, isInMyList: false, poster: lPosterPath, tmdbId: lTmdbId };
 							Movie.create(novoFilme, function (err, filme) {
 								if (err) res.send(err);
 
@@ -409,39 +427,18 @@ app.post('/api/searchnew', function(req, res){
 		},
 		function montaResultadoBusca (callback){
 			c('5 montaResultadoBusca');
-            var moviesRes = new Array();
             for (i = 0; i < filmesBuscadosMongo.length; i++) {
             	var esta = estaNaListaDoUsuario(filmesBuscadosMongo[i], filmesDoUsuario);
 			    filmesBuscadosMongo[i].isInMyList = esta;
 			    moviesRes.push(filmesBuscadosMongo[i]);
 			}
-			
-            res.json({ success: true, message: 'Search complete.', object: { movies: moviesRes }});
+			callback();
 		}
 	], function(err) { 
 		if (err != null) return res.status(500).send(err);
-
-        res.send({ msg: 'ok' });
+			
+        res.json({ success: true, message: 'Search complete.', object: { movies: moviesRes }});
     });
-});
-
-app.post('/api/search', function apiSearch (req, res) {
-	c('*********************************');
-	c('**              0              **');
-	c('*********************************');//c('req.body');c(req.body);c('');
-    
-    var term = req.body.termo;
-	if (req == undefined || req == '')  {
-		return res.send({ success: false, message: 'no req found', object: { } });
-	}
-	if (req.body == undefined || req.body == '')  {
-		return res.send({ success: false, message: 'no req body found', object: { } });
-	}
-	if (req.body.termo == undefined || req.body.termo == '')  {
-		return res.send({ success: false, message: 'no req body term found', object: { } });
-	}
-
-    fazOTrampo(req.body.hash, req.body.termo, res);
 });
 
 app.post('/api/obterfilmesrecomendados', auth, function(req, res) {
