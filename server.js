@@ -12,7 +12,7 @@ var async      = require('async');
 
 // configuration =================
 var senha      = process.env.WL_PWD;
-console.log(senha);
+//console.log(senha);
 app.set('port', (process.env.PORT || 5000));
 mongoose.connect(mongoUri);
 app.use(express.static(__dirname + '/public'));                 // set the static files location /public/img will be /img for users
@@ -385,8 +385,6 @@ app.post('/api/search', auth, function(req, res){
 				var lTmdbId = resultado.id;
 				var lTituloOriginal = resultado.original_title;
 				var lDataLancamento = resultado.release_date;
-				c('resultado');
-				c(resultado);
 				
 				filmeXpto = {};
 
@@ -394,6 +392,10 @@ app.post('/api/search', auth, function(req, res){
 					function apiSearchProcuraOFilmeNoMongo (callback) {
 						Movie.findOne({ tmdbId: lTmdbId }, function(err, movie){
 							if (err) return callback(err);
+
+							//c('*********movie');
+							//c(movie);
+							//c('');
 
 							filmeXpto = movie;
 							if (movie == null)
@@ -441,6 +443,58 @@ app.post('/api/search', auth, function(req, res){
 		if (err != null) return res.status(500).send(err);
 			
         res.json({ success: true, message: 'Search complete.', object: { movies: moviesRes }});
+    });
+});
+
+app.post('/api/obterurlposter', function(req, res){
+	c(req.body);
+	var lUrl;
+	var lCaminhoImagem;
+	var lTmdbId;
+	async.series([
+		function buscaConfig (callback) {
+			movieTMDB.configuration(function (err, cfg){
+				if (err) return callback(err);
+
+		        var baseUrl = cfg.images.base_url;
+		        var posterSizes = cfg.images.poster_sizes;
+		        var tamanho = posterSizes[1];
+		        c(baseUrl);
+		        c(tamanho);
+		        lUrl = baseUrl + "/" + tamanho;
+
+            	callback();
+			});
+		},
+		function buscaTmdbId(callback) {
+			Movie.findOne({ _id:req.body._id }, function(err, movie){
+				if (err) return callback(err);
+				c('filme buscado pelo metodo de obter url do poster');
+				c(movie);
+				lTmdbId = movie.tmdbId;
+				c(lTmdbId);
+
+	        	callback();
+	        });
+		},
+		function buscaUrl (callback) {
+
+			movieTMDB.movieImages({id: lTmdbId}, function (err, img){
+				if (err) return callback(err);
+
+	        	c(img.posters);
+		        lCaminhoImagem = img.posters[0].file_path;
+		        c('lCaminhoImagem');
+		        c(lCaminhoImagem);
+
+            	callback();
+			});
+		}
+	], function(err) { 
+		if (err != null) return res.status(500).send(err);
+		
+		var urlFinal = lUrl + "/" + lCaminhoImagem;
+        res.json({ success: true, message: 'url do poster obtida', object: { urlPoster: urlFinal } });
     });
 });
 
