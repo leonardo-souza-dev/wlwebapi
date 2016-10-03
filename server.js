@@ -23,10 +23,21 @@ app.use(bodyParser.json({ type: 'application/vnd.api+json' })); // parse applica
 var apiKey = '96ea630cb1b5c33ee03c20aa8a46b447';
 var movieTMDB = Promise.promisifyAll(require('moviedb')(apiKey));
 
+//configuracao da url base da imagem do poster
+var gTamanhoPoster;
+var gBaseUrl;
+movieTMDB.configuration(function (err, cfg){
+	if (err) return callback(err);
+
+    gBaseUrl = cfg.images.base_url;
+    var tamanho = 2;
+    gTamanhoPoster = cfg.images.poster_sizes[tamanho];
+});
+
 // define model =================
 var ObjectId = mongoose.Schema.Types.ObjectId;
 var Movie = mongoose.model('Movie', { titulo: String, tituloOriginal: String, isInMyList: Boolean, 
-	poster: String, tmdbId: Number, dataLancamento: String });
+	poster: String, tmdbId: Number, dataLancamento: String, urlPoster: String });
 var User = mongoose.model('User', { name: String, password: String, hash: String, movies: [], token: String });
 
 var auth = function (req, res, next) {
@@ -73,134 +84,9 @@ function estaNaListaDoUsuario(filme, lista){
 	return tem;
 }
 
-//obsoleto INICIO
-function criaFilmeNoMongo(filmeNovo){
-	Movie.create(filmeNovo, function apiSearch_Moviecreate(err, filme) {
-		if (err) res.send(err);
-		//console.log(filme);
-		//console.log('Filme inserido!');
-		c('*********************************');
-		c('**           3.1.1           ****');
-		c('*********************************');
-	});
-}
-
-function forNosResultados(resultadosTMDB){
-	for(var k in resultadosTMDB) {
-		var nome = resultadosTMDB[k].title;
-		var posterPath;
-		if (resultadosTMDB[k].poster_path != null) {
-			posterPath = resultadosTMDB[k].poster_path.substring(1);
-		}
-		var idTmdb = resultadosTMDB[k].id;
-		var tituloOriginal = resultadosTMDB[k].original_title;
-		c('**** TITLE ' + nome);
-		c('**** ORIGINAL TITLE ' + tituloOriginal);
-
-		Movie.findAsync({ tmdbId: idTmdb })
-        .then(function(movies){
-			if (movies.length == 0) {
-				//http://callbackhell.com/
-				c('*********************************');
-				c('**           3.1             ****');
-				c('*********************************');
-				c('*********** filme do TMDB #' + idTmdb + ' NAO ENCONTRADO no banco ');
-				
-				var filmeNovo = { 
-					titulo: nome, 
-					tituloOriginal: tituloOriginal, 
-					isInMyList: false, 
-					poster: posterPath, 
-					tmdbId: idTmdb 
-				}
-				criaFilmeNoMongo(filmeNovo);
-			} else {
-				c('*********** Foi encontrado o filme do TMDB #' + idTmdb + ' no MongoDB ');
-				c(movies);
-
-				c('*********************************');
-				c('**           3.2             ****');
-				c('*********************************');
-			}
-        });
-	}
-}
-
-function fazOTrampo(pHash, pTermo, res){
-
-	User.findOneAsync({ hash: pHash })
-	.then(function(user){
-		
-		c('*********************************');
-		c('**              1            ****');
-		c('*********************************');//c('*********** Usuario encontrado');c(user);c('');c('');
-		
-		movieTMDB.searchMovieAsync({query: pTermo}).then(function buscaTMDB(r){
-
-			c('*********************************');
-			c('**              2            ****');
-			c('*********************************');
-			var resultadosTMDB = r.results;
-			var ids = [];
-			for(var x in resultadosTMDB){
-				ids.push(resultadosTMDB[x].id);
-			}
-			c('ids');
-			c(ids);
-			//c('*********** QTD filmes encontrados no TMDB');
-			//c(r.results.length);
-			//c('*********** Filmes encontrados no TMDB');
-			c('inicio do for');
-			forNosResultados(resultadosTMDB);
-			c('FIM do for');
-	        
-	        Movie.where( { tmdbId: { $in: ids } }, function apiSearch_Moviefind(err, movies) {
-				if (err) res.send(err);
-				c('*********************************');
-				c('**           4                 **');
-				c('**      apiSearch_Moviefind    **');
-				c('**                             **');
-				c('**  filmes encontrados depois  **');
-				c('**  que ja inseriu (ou nao) os **');
-				c('**      filmes do TMDB         **');
-				c(movies);
-				c('');
-				var userMovies = user.movies;
-				c('user.movies');
-				c(user.movies);
-	            var moviesRes = new Array();
-	            for (i = 0; i < movies.length; i++) {
-	            	var esta = estaNaListaDoUsuario(movies[i], userMovies);
-				    movies[i].isInMyList = esta;
-				    moviesRes.push(movies[i]);
-				}
-				c('*********************************');
-	            res.json({ success: true, message: 'Search complete.', object: { movies: moviesRes }});
-	        });
-		});
-	});
-}
-
-app.post('/api/searchold', function apiSearch (req, res) {    
-    var term = req.body.termo;
-	if (req == undefined || req == '')  {
-		return res.send({ success: false, message: 'no req found', object: { } });
-	}
-	if (req.body == undefined || req.body == '')  {
-		return res.send({ success: false, message: 'no req body found', object: { } });
-	}
-	if (req.body.termo == undefined || req.body.termo == '')  {
-		return res.send({ success: false, message: 'no req body term found', object: { } });
-	}
-
-    fazOTrampo(req.body.hash, req.body.termo, res);
-});
-//obsoleto FIM
-
 // routes ===========================================
 // api ----------------------------------------------
 app.post('/api/createuser', auth, function(req, res) {
-	c(req.body.hash);
 	var pHash = req.body.hash;
 	var lGuid = generateUUID();
 
@@ -212,7 +98,7 @@ app.post('/api/createuser', auth, function(req, res) {
 		}, function(err, user) {
 			if (err) res.send(err);
 
-			console.log('User created!');
+			c('User created!');
 	    	res.json({ success: true, message: "User created!", 
 	    		object: { exists: false, user: user, hash: lGuid } });
 		});
@@ -228,7 +114,6 @@ app.post('/api/createuser', auth, function(req, res) {
 				}, function(err, user2) {
 					if (err) res.send(err);
 
-					c(user2);
 					c('User not found with the hash, but created another with the hash requested!');
 			    	res.json({ success: true, message: "User created!", object: { exists: true, user: user2, hash: lGuid } });
 				});
@@ -277,17 +162,11 @@ app.post('/api/removemovie', auth, function(req, res) {
 			user.movies = newMovies;
 
 			user.save(function(err) {
-				if (err) { 
-					console.log('update error');
-					res.json({ success: false, message: 'Movie not added!', object: { } }); 
-				}
-				else {
+				if (err) res.json({ success: false, message: 'Movie not added!', object: { } }); 
 					
-					var msg = 'Movie \'' + movie.titulo + '\' removed. ';
-					console.log('\r\n' + msg + '\r\n');
+				var msg = 'Movie \'' + movie.titulo + '\' removed. ';
 
-					res.json({ success: true, message: msg, object: { } });
-				}
+				res.json({ success: true, message: msg, object: { } });
 			});
         });
 	});
@@ -310,17 +189,10 @@ app.post('/api/addmovie', auth, function adicionaJs(req, res) {
 				user.movies.addToSet(movie);
 
 				user.save(function salvaUsuarioJs(err) {
-					if (err) { 
-						console.log('update error');
-						res.json({ success: false, message: 'Movie not added!', 
-							object: { } }); 
-					} else {
+					if (err) res.json({ success: false, message: 'Movie not added!', object: { } }); 
 					
-						var msg = 'Movie \'' + movie.titulo + '\' added. ';
-						c('\r\n' + msg + '\r\n');
-
-						res.json({ success: true, message: msg, object: { } });
-					}
+					var msg = 'Movie \'' + movie.titulo + '\' added. ';
+					res.json({ success: true, message: msg, object: { } });
 				});
 			}
         });
@@ -328,7 +200,6 @@ app.post('/api/addmovie', auth, function adicionaJs(req, res) {
 });
 
 app.post('/api/search', auth, function(req, res){
-	console.log(req.body);
 	if (req == undefined || req == '')  {
 		return res.send({ success: false, message: 'no req found', object: { } });
 	}
@@ -381,21 +252,41 @@ app.post('/api/search', auth, function(req, res){
 
 				var lNome = resultado.title;
 				var lPosterPath;
-				if (resultado.poster_path != null) lPosterPath = resultado.poster_path.substring(1);
+				if (resultado.poster_path != null) {
+					lPosterPath = resultado.poster_path.substring(1);
+				} else {
+					lPosterPath = '';
+				}
 				var lTmdbId = resultado.id;
 				var lTituloOriginal = resultado.original_title;
 				var lDataLancamento = resultado.release_date;
+				var lUrlPoster;
 				
 				filmeXpto = {};
 
 				async.series([
+					function buscaUrl (callback) {
+
+						movieTMDB.movieImages({id: lTmdbId}, function (err, img){
+							if (err) return callback(err);
+
+				        	if (img.posters.length != 0) {
+						        lCaminhoImagem = img.posters[0].file_path;
+				        	}
+				        	lUrlPoster = gBaseUrl + "/" + gTamanhoPoster + "/" + lCaminhoImagem;
+
+				        	c('IIIIIIIIIIIIIIIIIIIIIIIIIIIIIII');
+				        	c(lUrlPoster);
+			            	callback();
+						});
+					},
 					function apiSearchProcuraOFilmeNoMongo (callback) {
 						Movie.findOne({ tmdbId: lTmdbId }, function(err, movie){
 							if (err) return callback(err);
 
-							//c('*********movie');
-							//c(movie);
-							//c('');
+							c('*&*@$&*   MOVIE   &@$*&@$');
+							c(movie);
+							c('');
 
 							filmeXpto = movie;
 							if (movie == null)
@@ -408,7 +299,7 @@ app.post('/api/search', auth, function(req, res){
 					},
 					function apiSearchSeNaoExistirSalvaFilmeNoMongo (callback) {							//c(new Date().getTime());
 						if (filmeXpto == null) {
-							var novoFilme = { dataLancamento: lDataLancamento, titulo: lNome, tituloOriginal: lTituloOriginal, isInMyList: false, poster: lPosterPath, tmdbId: lTmdbId };
+							var novoFilme = { urlPoster: lUrlPoster, dataLancamento: lDataLancamento, titulo: lNome, tituloOriginal: lTituloOriginal, isInMyList: false, poster: lPosterPath, tmdbId: lTmdbId };
 							Movie.create(novoFilme, function (err, filme) {
 								if (err) res.send(err);
 
@@ -446,32 +337,22 @@ app.post('/api/search', auth, function(req, res){
     });
 });
 
-app.post('/api/obterurlposter', function(req, res){
-	c(req.body);
-	var lUrl;
+/*app.post('/api/obterurlposter', function(req, res){
+	c('obtendo url poster');
+	
 	var lCaminhoImagem;
 	var lTmdbId;
+	var tituloFilme;
+
 	async.series([
-		function buscaConfig (callback) {
-			movieTMDB.configuration(function (err, cfg){
-				if (err) return callback(err);
-
-		        var baseUrl = cfg.images.base_url;
-		        var posterSizes = cfg.images.poster_sizes;
-		        var tamanho = posterSizes[1];
-		        c(baseUrl);
-		        c(tamanho);
-		        lUrl = baseUrl + "/" + tamanho;
-
-            	callback();
-			});
-		},
-		function buscaTmdbId(callback) {
+		function buscaMongo (callback) {
 			Movie.findOne({ _id:req.body._id }, function(err, movie){
 				if (err) return callback(err);
-				c('filme buscado pelo metodo de obter url do poster');
-				c(movie);
+				//c('filme buscado pelo metodo de obter url do poster');
+				//c(movie);
+				tituloFilme = movie.tituloOriginal;
 				lTmdbId = movie.tmdbId;
+				c('----lTmdbId');
 				c(lTmdbId);
 
 	        	callback();
@@ -482,21 +363,19 @@ app.post('/api/obterurlposter', function(req, res){
 			movieTMDB.movieImages({id: lTmdbId}, function (err, img){
 				if (err) return callback(err);
 
-	        	c(img.posters);
-		        lCaminhoImagem = img.posters[0].file_path;
-		        c('lCaminhoImagem');
-		        c(lCaminhoImagem);
-
+	        	if (img.posters.length != 0) {
+			        lCaminhoImagem = img.posters[0].file_path;
+	        	}
             	callback();
 			});
 		}
 	], function(err) { 
 		if (err != null) return res.status(500).send(err);
 		
-		var urlFinal = lUrl + "/" + lCaminhoImagem;
+		var urlFinal = gBaseUrl + "/" + gTamanhoPoster + "/" + lCaminhoImagem;
         res.json({ success: true, message: 'url do poster obtida', object: { urlPoster: urlFinal } });
     });
-});
+});*/
 
 app.post('/api/obterfilmesrecomendados', auth, function(req, res) {
 
@@ -554,7 +433,7 @@ app.post('/api/obtermylistt', auth, function(req, res) {
 		}
 
 		var msg = 'MyListt searched. #' + user.movies.length + ' movies';
-		console.log('\r\n' + msg + '\r\n');
+		//c('\r\n' + msg + '\r\n');
 
         res.json({ success: true, message: msg, object: { mylistt: user.movies }});
     });        
@@ -579,7 +458,7 @@ app.post('/api/updateuser', auth, function(req, res) {
 });
 
 app.post('/api/enviarlog', auth, function(req, res) {
-    console.log('log');
+    c('log');
     if (req != null && req.body != null && req.body.logmsg != null) {
     	console.log(req.body.logmsg);
         res.json({ success: true, message: "Logado no server, conteudo ok", object: { }});
@@ -606,5 +485,5 @@ app.get('*', auth, function(req, res) {
 // listen (start app with node server.js) ======================================
 app.listen(app.get('port'), function() {
 
-    console.log('WL WebApi app is running on port', app.get('port'));
+    c('WL WebApi app is running on port', app.get('port'));
 });
