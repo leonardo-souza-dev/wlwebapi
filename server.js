@@ -37,7 +37,7 @@ movieTMDB.configuration(function (err, cfg){
 // define model =================
 var ObjectId = mongoose.Schema.Types.ObjectId;
 var Movie = mongoose.model('Movie', { titulo: String, tituloOriginal: String, isInMyList: Boolean, 
-	poster: String, tmdbId: Number, dataLancamento: String, urlPoster: String });
+	poster: String, tmdbId: Number, dataLancamento: String, urlPoster: String, popularidade: String });
 var User = mongoose.model('User', { name: String, password: String, hash: String, movies: [], token: String });
 
 var auth = function (req, res, next) {
@@ -145,10 +145,10 @@ app.post('/api/removemovie', auth, function(req, res) {
 	var hash = req.body.hash;
 	var movieId = req.body.movieid;
 
-	User.findOne({ hash: hash }, function(err, user) {
+	User.findOne({ hash: hash }, function userFindOne(err, user) {
 		if (err) res.send(err);
 
-        Movie.findOne({ _id: movieId }, function(err, movie) {
+        Movie.findOne({ _id: movieId }, function movieFindOne(err, movie) {
 			if (err) res.send(err);
 
 			var newMovies = new Array();
@@ -250,6 +250,10 @@ app.post('/api/search', auth, function(req, res){
 
             async.forEach(resultadosTMDB, function(resultado, callback) {
 
+            	c('***************resultado');
+            	c(resultado);
+            	c('');
+
 				var lNome = resultado.title;
 				var lPosterPath;
 				if (resultado.poster_path != null) {
@@ -261,6 +265,7 @@ app.post('/api/search', auth, function(req, res){
 				var lTituloOriginal = resultado.original_title;
 				var lDataLancamento = resultado.release_date;
 				var lUrlPoster;
+				var lPopularidade = resultado.popularity;
 				
 				filmeXpto = {};
 
@@ -275,18 +280,12 @@ app.post('/api/search', auth, function(req, res){
 				        	}
 				        	lUrlPoster = gBaseUrl + "/" + gTamanhoPoster + "/" + lCaminhoImagem;
 
-				        	c('IIIIIIIIIIIIIIIIIIIIIIIIIIIIIII');
-				        	c(lUrlPoster);
 			            	callback();
 						});
 					},
 					function apiSearchProcuraOFilmeNoMongo (callback) {
 						Movie.findOne({ tmdbId: lTmdbId }, function(err, movie){
 							if (err) return callback(err);
-
-							c('*&*@$&*   MOVIE   &@$*&@$');
-							c(movie);
-							c('');
 
 							filmeXpto = movie;
 							if (movie == null)
@@ -297,9 +296,10 @@ app.post('/api/search', auth, function(req, res){
 				        	callback();
 				        });
 					},
-					function apiSearchSeNaoExistirSalvaFilmeNoMongo (callback) {							//c(new Date().getTime());
+					function apiSearchSeNaoExistirSalvaFilmeNoMongo (callback) {
 						if (filmeXpto == null) {
-							var novoFilme = { urlPoster: lUrlPoster, dataLancamento: lDataLancamento, titulo: lNome, tituloOriginal: lTituloOriginal, isInMyList: false, poster: lPosterPath, tmdbId: lTmdbId };
+							var novoFilme = { urlPoster: lUrlPoster, dataLancamento: lDataLancamento, titulo: lNome, tituloOriginal: lTituloOriginal, 
+								isInMyList: false, poster: lPosterPath, tmdbId: lTmdbId, popularidade: lPopularidade };
 							Movie.create(novoFilme, function (err, filme) {
 								if (err) res.send(err);
 
