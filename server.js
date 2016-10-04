@@ -12,7 +12,6 @@ var async      = require('async');
 
 // configuration =================
 var senha      = process.env.WL_PWD;
-//console.log(senha);
 app.set('port', (process.env.PORT || 5000));
 mongoose.connect(mongoUri);
 app.use(express.static(__dirname + '/public'));                 // set the static files location /public/img will be /img for users
@@ -22,6 +21,8 @@ app.use(bodyParser.json());                                     // parse applica
 app.use(bodyParser.json({ type: 'application/vnd.api+json' })); // parse application/vnd.api+json as json
 var apiKey = '96ea630cb1b5c33ee03c20aa8a46b447';
 var movieTMDB = Promise.promisifyAll(require('moviedb')(apiKey));
+
+c(app.get('port'));
 
 //configuracao da url base da imagem do poster
 var gTamanhoPoster;
@@ -337,46 +338,6 @@ app.post('/api/search', auth, function(req, res){
     });
 });
 
-/*app.post('/api/obterurlposter', function(req, res){
-	c('obtendo url poster');
-	
-	var lCaminhoImagem;
-	var lTmdbId;
-	var tituloFilme;
-
-	async.series([
-		function buscaMongo (callback) {
-			Movie.findOne({ _id:req.body._id }, function(err, movie){
-				if (err) return callback(err);
-				//c('filme buscado pelo metodo de obter url do poster');
-				//c(movie);
-				tituloFilme = movie.tituloOriginal;
-				lTmdbId = movie.tmdbId;
-				c('----lTmdbId');
-				c(lTmdbId);
-
-	        	callback();
-	        });
-		},
-		function buscaUrl (callback) {
-
-			movieTMDB.movieImages({id: lTmdbId}, function (err, img){
-				if (err) return callback(err);
-
-	        	if (img.posters.length != 0) {
-			        lCaminhoImagem = img.posters[0].file_path;
-	        	}
-            	callback();
-			});
-		}
-	], function(err) { 
-		if (err != null) return res.status(500).send(err);
-		
-		var urlFinal = gBaseUrl + "/" + gTamanhoPoster + "/" + lCaminhoImagem;
-        res.json({ success: true, message: 'url do poster obtida', object: { urlPoster: urlFinal } });
-    });
-});*/
-
 app.post('/api/obterfilmesrecomendados', auth, function(req, res) {
 
     if (req.body.hash == undefined || req.body.hash == '')
@@ -485,5 +446,5 @@ app.get('*', auth, function(req, res) {
 // listen (start app with node server.js) ======================================
 app.listen(app.get('port'), function() {
 
-    c('WL WebApi app is running on port', app.get('port'));
+    console.log('WL WebApi app is running on port', app.get('port'));
 });
