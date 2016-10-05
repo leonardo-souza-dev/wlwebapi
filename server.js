@@ -22,7 +22,7 @@ app.use(bodyParser.json({ type: 'application/vnd.api+json' })); // parse applica
 var apiKey = '96ea630cb1b5c33ee03c20aa8a46b447';
 var movieTMDB = Promise.promisifyAll(require('moviedb')(apiKey));
 
-c(app.get('port'));
+//c(app.get('port'));
 
 //configuracao da url base da imagem do poster
 var gTamanhoPoster;
@@ -200,7 +200,38 @@ app.post('/api/addmovie', auth, function adicionaJs(req, res) {
 	});
 });
 
+app.post('/api/obteritenscarrossel', auth, function carrosel(req, res){
+
+	var lTmdbIds = [268,286217,901,9710];
+	var lUrls = [];
+
+    async.forEach(lTmdbIds, function(lTmdbId, callback) {
+		async.series([
+			function buscaUrl (callback) {
+				movieTMDB.movieImages({id: lTmdbId}, function (err, img){
+					if (err) return callback(err);
+
+					var lCaminhoImagem;
+
+		        	if (img.posters.length != 0) {
+				        lCaminhoImagem = img.posters[0].file_path;
+		        	}
+		        	var lUrlPoster = gBaseUrl + "/" + gTamanhoPoster + "/" + lCaminhoImagem;
+		        	lUrls.push(lUrlPoster);
+
+	            	callback();
+				});
+			}
+		], callback);
+    }, function (err) {
+		if (err != null) return res.status(500).send(err);
+			
+        res.json({ success: true, message: 'Search URLs complete.', object: { urls: lUrls }});
+		});
+	});
+
 app.post('/api/search', auth, function(req, res){
+
 	if (req == undefined || req == '')  {
 		return res.send({ success: false, message: 'no req found', object: { } });
 	}
@@ -299,11 +330,20 @@ app.post('/api/search', auth, function(req, res){
 					},
 					function apiSearchSeNaoExistirSalvaFilmeNoMongo (callback) {
 						if (filmeXpto == null) {
-							var novoFilme = { urlPoster: lUrlPoster, dataLancamento: lDataLancamento, titulo: lNome, tituloOriginal: lTituloOriginal, 
-								isInMyList: false, poster: lPosterPath, tmdbId: lTmdbId, popularidade: lPopularidade };
+
+							var novoFilme = { 
+								urlPoster: lUrlPoster, 
+								dataLancamento: lDataLancamento, 
+								titulo: lNome, 
+								tituloOriginal: lTituloOriginal, 
+								isInMyList: false, 
+								poster: lPosterPath, 
+								tmdbId: lTmdbId, 
+								popularidade: lPopularidade 
+							};
+
 							Movie.create(novoFilme, function (err, filme) {
 								if (err) res.send(err);
-
 
 								c('4a salvado ' + resultado.original_title + ' no mongo');
 								c('4b inserindo filme ' + resultado.original_title + ' na lista a ser retornada');
@@ -319,7 +359,6 @@ app.post('/api/search', auth, function(req, res){
 						}
 					}
 				], callback);
-
             }, callback);
 		},
 		function montaResultadoBusca (callback){
