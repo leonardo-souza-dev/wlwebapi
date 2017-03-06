@@ -22,8 +22,6 @@ app.use(bodyParser.json({ type: 'application/vnd.api+json' })); // parse applica
 var apiKey = '96ea630cb1b5c33ee03c20aa8a46b447';
 var movieTMDB = Promise.promisifyAll(require('moviedb')(apiKey));
 
-//c(app.get('port'));
-
 //configuracao da url base da imagem do poster
 var gTamanhoPoster;
 var gBaseUrl;
@@ -49,13 +47,28 @@ var auth = function (req, res, next) {
 
 	var user = basikAuth(req);
 
+	//console.log('user');
+	//console.log(user);
+
+	//console.log('user.name');
+	//console.log(user.name);
+
+	//console.log('user.pass');
+	//console.log(user.pass);
+
+	//console.log('senha');
+	//console.log(senha);
+
 	if (!user || !user.name || !user.pass) {
+		//console.log('nao autorizado1');
 		return unauthorized(res);
 	};
-
+	
 	if (user.name === 'asd' && user.pass === senha) {
+		//console.log('autorizado');
 		return next();
 	} else {
+		//console.log('nao autorizado2');
 		return unauthorized(res);
 	};
 };
@@ -230,7 +243,7 @@ app.post('/api/obteritenscarrossel', auth, function carrosel(req, res){
 		});
 	});
 
-app.post('/api/search', auth, function(req, res){
+app.post('/api/search', function(req, res){
 
 	if (req == undefined || req == '')  {
 		return res.send({ success: false, message: 'no req found', object: { } });
@@ -268,6 +281,7 @@ app.post('/api/search', auth, function(req, res){
 		},
 		function buscaFilmeTmdb (callback) {
 			c('2 buscaFilmeTmdb');
+			c(lTermo);
 
 			movieTMDB.searchMovieAsync({query: lTermo}, function (err, r){
 				if (err) return callback(err);
